@@ -260,7 +260,7 @@ function App() {
           <div className="header-left"><span className="app-title">MOON DUST</span></div>
           <div className="header-actions">
             <div className="header-right" aria-label="主题切换">{scenes.map((item) => <button className={`scene-btn ${scene === item.id ? 'active' : ''}`} key={item.id} onClick={() => setScene(item.id)} type="button">{item.label}</button>)}</div>
-            {auth.loading ? <span className="session-label">···</span> : auth.session ? <div className="session-controls"><span className="session-label">{auth.profile?.username || auth.session.user.email}</span><button className="session-btn" onClick={() => void auth.logout()} type="button">登出</button></div> : <button className="session-btn" onClick={() => setModal('auth')} type="button">登录</button>}
+            {auth.session ? <div className="session-controls"><span className="session-label">{auth.profile?.username || auth.session.user.email}</span><button className="session-btn" onClick={() => void auth.logout()} type="button">登出</button></div> : <button aria-busy={auth.loading} className="session-btn" onClick={() => setModal('auth')} type="button">登录 / 注册</button>}
           </div>
         </header>
         <section className="quote-section">

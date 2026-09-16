@@ -55,6 +55,7 @@ export function useAuth() {
     const subscription = onSessionChange((_event, nextSession) => {
       if (!active) return
       setSession(nextSession)
+      setLoading(false)
       setError(null)
       if (nextSession?.user) void loadProfile(nextSession.user.id)
       else setProfile(null)

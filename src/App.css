@@ -1339,6 +1339,180 @@ html, body {
   min-height: 100vh;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.session-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.session-label {
+  max-width: 180px;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-btn {
+  padding: 7px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.62);
+  background: rgba(10, 10, 15, 0.25);
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.session-btn:hover {
+  border-color: rgba(201, 168, 124, 0.45);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.auth-panel {
+  top: 50%;
+  left: 50%;
+  width: min(92vw, 430px);
+  padding: 46px 38px 38px;
+  transform: translate(-50%, -50%) scale(0.95);
+}
+
+.auth-panel.active {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.auth-panel-content {
+  text-align: center;
+}
+
+.auth-kicker {
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.35em;
+}
+
+.auth-panel h2 {
+  margin: 18px 0 9px;
+  color: rgba(255, 255, 255, 0.92);
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.auth-intro {
+  margin-bottom: 26px;
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.auth-mode-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-bottom: 18px;
+}
+
+.auth-mode-toggle button {
+  padding: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.45);
+  background: transparent;
+  font-family: var(--font-display);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.auth-mode-toggle button.active {
+  border-color: rgba(201, 168, 124, 0.38);
+  color: #fff;
+  background: rgba(201, 168, 124, 0.1);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.auth-form input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  outline: none;
+  color: var(--text-primary);
+  background: rgba(0, 0, 0, 0.3);
+  font-family: var(--font-serif);
+  font-size: 13px;
+}
+
+.auth-form input:focus {
+  border-color: rgba(201, 168, 124, 0.45);
+}
+
+.auth-status,
+.data-status-error {
+  margin: 0;
+  padding: 9px 11px;
+  border-radius: 7px;
+  font-size: 11px;
+  line-height: 1.7;
+  text-align: left;
+}
+
+.auth-status-warning {
+  border: 1px solid rgba(201, 168, 124, 0.25);
+  color: rgba(232, 216, 168, 0.78);
+  background: rgba(201, 168, 124, 0.07);
+}
+
+.auth-status-error,
+.data-status-error {
+  border: 1px solid rgba(255, 100, 100, 0.22);
+  color: rgba(255, 155, 155, 0.85);
+  background: rgba(255, 100, 100, 0.07);
+}
+
+.auth-status-success {
+  border: 1px solid rgba(124, 182, 142, 0.24);
+  color: rgba(168, 219, 183, 0.85);
+  background: rgba(124, 182, 142, 0.07);
+}
+
+.auth-submit {
+  width: 100%;
+  margin-top: 5px;
+}
+
+.auth-submit:disabled,
+.review-action-btn:disabled,
+.upload-own-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.review-poster-section .poster-placeholder,
+.detail-poster-section .poster-placeholder {
+  min-height: 280px;
+  border-radius: 16px 0 0 16px;
+}
+
 .quote-content {
   transition: opacity 1.5s ease, transform 1.5s ease;
 }
@@ -1480,6 +1654,30 @@ html, body {
 }
 
 @media (max-width: 768px) {
+  .header-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .session-label {
+    max-width: 220px;
+  }
+
+  .auth-panel {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 20px 20px 0 0;
+    transform: translateY(100%);
+  }
+
+  .auth-panel.active {
+    transform: translateY(0);
+  }
+
   .quote-section,
   .quote-content,
   .entry-container,
@@ -1535,6 +1733,12 @@ html, body {
 
   .export-panel.active {
     transform: translateY(0);
+  }
+
+  .review-poster-section .poster-placeholder,
+  .detail-poster-section .poster-placeholder {
+    min-height: 160px;
+    border-radius: 12px 12px 0 0;
   }
 }
 

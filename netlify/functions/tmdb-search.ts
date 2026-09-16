@@ -54,7 +54,7 @@ export default async (request: Request) => {
       type,
       title: item.title ?? item.name ?? '未命名作品',
       poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
-      date: item.release_date || item.first_air_date || null,
+      releaseDate: item.release_date || item.first_air_date || null,
     }))
 
     return json({ results })

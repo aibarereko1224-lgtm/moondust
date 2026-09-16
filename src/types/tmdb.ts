@@ -5,7 +5,7 @@ export interface TmdbSearchResult {
   type: TmdbSearchType
   title: string
   poster: string | null
-  date: string | null
+  releaseDate: string | null
 }
 
 export interface TmdbSearchResponse {

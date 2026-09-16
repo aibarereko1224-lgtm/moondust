@@ -517,6 +517,14 @@ html, body {
   overflow: hidden;
 }
 
+.poster-item-year {
+  display: block;
+  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
 /* 没找到？自己上传 */
 .poster-upload-option {
   margin-top: 16px;

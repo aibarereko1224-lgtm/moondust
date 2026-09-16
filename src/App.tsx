@@ -5,6 +5,7 @@ import { ParticleCover } from './components/ParticleCover'
 import { SceneBackgrounds } from './components/SceneBackgrounds'
 import { getMonthName, getSeason, getSeasonName, legacyQuotes, scenes, type MediaKind, type Scene } from './data/legacyUi'
 import { useAuth } from './hooks/useAuth'
+import { getLocalDateString } from './lib/date'
 import { createEntry, deleteEntry, getEntries, updateEntry } from './lib/entries'
 import { currentMonthKey, recordDate } from './lib/notebook'
 import { searchTmdb } from './lib/tmdb'
@@ -21,12 +22,14 @@ interface RecordGroup {
   records: MediaRecord[]
 }
 
-const emptyDraft = {
-  title: '',
-  poster: '',
-  date: new Date().toISOString().slice(0, 10),
-  rating: 3,
-  review: '',
+function createEmptyDraft() {
+  return {
+    title: '',
+    poster: '',
+    date: getLocalDateString(),
+    rating: 3,
+    review: '',
+  }
 }
 
 function Stars({ rating }: { rating: number | null }) {
@@ -65,7 +68,7 @@ function App() {
   const [filterType, setFilterType] = useState<'all' | MediaType>('all')
   const [filterQuery, setFilterQuery] = useState('')
   const [ratingFilter, setRatingFilter] = useState(0)
-  const [draft, setDraft] = useState(emptyDraft)
+  const [draft, setDraft] = useState(createEmptyDraft)
   const [saving, setSaving] = useState(false)
   const [searching, setSearching] = useState(false)
   const [searchResults, setSearchResults] = useState<TmdbSearchResult[]>([])
@@ -127,7 +130,7 @@ function App() {
 
   const startCreate = () => {
     setSelectedRecord(null)
-    setDraft({ ...emptyDraft, title: query })
+    setDraft({ ...createEmptyDraft(), title: query })
     requireLogin('review')
   }
 
@@ -161,10 +164,9 @@ function App() {
   const selectSearchResult = (result: TmdbSearchResult) => {
     setSelectedRecord(null)
     setDraft({
-      ...emptyDraft,
+      ...createEmptyDraft(),
       title: result.title,
       poster: result.poster ?? '',
-      date: result.date || emptyDraft.date,
     })
     requireLogin('review')
   }
@@ -249,7 +251,7 @@ function App() {
         <button aria-label="关闭弹层" className="modal-overlay" onClick={closeModal} type="button" />
         <AuthPanel active={modal === 'auth'} configured={auth.configured} error={auth.error} onClose={closeModal} onLogin={auth.login} onRegister={auth.register} />
 
-        <div className={`poster-modal glass-panel ${modal === 'search' ? 'active' : ''}`}><div className="poster-modal-header"><h3 className="poster-modal-title">选择作品</h3><button className="modal-close-btn" onClick={closeModal} type="button">×</button></div><div className="poster-modal-body">{searching ? <div className="library-empty"><div className="loading-spinner" /><p className="library-empty-text">正在搜索…</p></div> : dataError ? <p className="migration-note">{dataError}</p> : searchResults.length ? <div className="poster-grid">{searchResults.map((result) => <button className="poster-item" key={`${result.type}-${result.id}`} onClick={() => selectSearchResult(result)} type="button">{result.poster ? <img alt={result.title} className="poster-item-img" src={result.poster} /> : <span className="poster-item-img poster-placeholder">无封面</span>}<span className="poster-item-info"><span className="poster-item-title">{result.title}</span></span></button>)}</div> : <p className="migration-note">没有找到相关作品，可以手动填写。</p>}<div className="poster-upload-option"><button className="upload-own-btn" onClick={startCreate} type="button"><span className="upload-own-icon">+</span><span>没找到？手动填写</span></button></div></div></div>
+        <div className={`poster-modal glass-panel ${modal === 'search' ? 'active' : ''}`}><div className="poster-modal-header"><h3 className="poster-modal-title">选择作品</h3><button className="modal-close-btn" onClick={closeModal} type="button">×</button></div><div className="poster-modal-body">{searching ? <div className="library-empty"><div className="loading-spinner" /><p className="library-empty-text">正在搜索…</p></div> : dataError ? <p className="migration-note">{dataError}</p> : searchResults.length ? <div className="poster-grid">{searchResults.map((result) => <button className="poster-item" key={`${result.type}-${result.id}`} onClick={() => selectSearchResult(result)} type="button">{result.poster ? <img alt={result.title} className="poster-item-img" src={result.poster} /> : <span className="poster-item-img poster-placeholder">无封面</span>}<span className="poster-item-info"><span className="poster-item-title">{result.title}</span>{result.releaseDate && <span className="poster-item-year">{result.releaseDate.slice(0, 4)}</span>}</span></button>)}</div> : <p className="migration-note">没有找到相关作品，可以手动填写。</p>}<div className="poster-upload-option"><button className="upload-own-btn" onClick={startCreate} type="button"><span className="upload-own-icon">+</span><span>没找到？手动填写</span></button></div></div></div>
 
         <div className={`review-modal glass-panel ${modal === 'review' ? 'active' : ''}`}><button className="modal-close-btn review-close-btn" onClick={closeModal} type="button">×</button><div className="review-modal-content"><div className="review-poster-section">{draft.poster ? <img alt={draft.title} className="review-poster-img" src={draft.poster} /> : <div className="review-poster-img poster-placeholder">无封面</div>}</div><div className="review-form-section"><input className="review-title-input" onChange={(event) => setDraft((value) => ({ ...value, title: event.target.value }))} placeholder="作品名称" value={draft.title} /><input className="review-year-input" onChange={(event) => setDraft((value) => ({ ...value, poster: event.target.value }))} placeholder="封面图片 URL (选填)" value={draft.poster} /><input className="review-year-input" onChange={(event) => setDraft((value) => ({ ...value, date: event.target.value }))} type="date" value={draft.date} /><div className="review-rating-section"><div className="star-rating">{Array.from({ length: 5 }, (_, index) => <button className={`star ${index < draft.rating ? 'active' : ''}`} key={index} onClick={() => setDraft((value) => ({ ...value, rating: index + 1 }))} type="button">★</button>)}</div></div><div className="review-textarea-section"><textarea className="review-textarea" onChange={(event) => setDraft((value) => ({ ...value, review: event.target.value }))} placeholder="记录你靠近的宇宙..." value={draft.review} /></div>{dataError && <p className="data-status-error">{dataError}</p>}<div className="review-actions"><button className="review-action-btn abandon" onClick={closeModal} type="button">放弃</button><button className="review-action-btn save-later" disabled={saving} onClick={() => void saveDraft(true)} type="button">先入库稍后写</button><button className="review-action-btn root-btn" disabled={saving} onClick={() => void saveDraft(false)} type="button">{saving ? '保存中…' : 'Root'}</button></div></div></div></div>
 

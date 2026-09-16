@@ -5,7 +5,9 @@ import { SceneBackgrounds } from './components/SceneBackgrounds'
 import { getMonthName, getSeason, getSeasonName, legacyQuotes, scenes, type MediaKind, type Scene } from './data/legacyUi'
 import { useAuth } from './hooks/useAuth'
 import { createEntry, deleteEntry, getEntries, updateEntry } from './lib/entries'
+import { searchTmdb } from './lib/tmdb'
 import type { MediaRecord, MediaType } from './types/media'
+import type { TmdbSearchResult } from './types/tmdb'
 import './App.css'
 
 type Modal = 'auth' | 'search' | 'review' | 'library' | 'detail' | 'export' | null
@@ -63,6 +65,8 @@ function App() {
   const [ratingFilter, setRatingFilter] = useState(0)
   const [draft, setDraft] = useState(emptyDraft)
   const [saving, setSaving] = useState(false)
+  const [searching, setSearching] = useState(false)
+  const [searchResults, setSearchResults] = useState<TmdbSearchResult[]>([])
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -119,13 +123,46 @@ function App() {
   }
 
   const startCreate = () => {
-    if (mediaType === 'tv') {
-      setDataError('当前数据库 entries_type_check 不允许 tv。TV 入口保留，但暂时无法保存。')
+    setSelectedRecord(null)
+    setDraft({ ...emptyDraft, title: query })
+    requireLogin('review')
+  }
+
+  const searchMedia = async () => {
+    if (mediaType === 'book') {
+      startCreate()
+      return
+    }
+
+    const term = query.trim()
+    if (!term) {
+      setDataError('请输入要搜索的作品名称。')
+      setSearchResults([])
       setModal('search')
       return
     }
+
+    setModal('search')
+    setSearching(true)
+    setDataError(null)
+    setSearchResults([])
+    try {
+      setSearchResults(await searchTmdb(term, mediaType))
+    } catch (error) {
+      setDataError(error instanceof Error ? error.message : '搜索暂时不可用，请稍后再试。')
+    } finally {
+      setSearching(false)
+    }
+  }
+
+  const selectSearchResult = (result: TmdbSearchResult) => {
     setSelectedRecord(null)
-    setDraft({ ...emptyDraft, title: query })
+    setDraft({
+      ...emptyDraft,
+      title: result.title,
+      poster: result.poster ?? '',
+      date: result.date || emptyDraft.date,
+    })
     requireLogin('review')
   }
 
@@ -228,7 +265,7 @@ function App() {
         </header>
         <section className="quote-section">
           <div className={`quote-content ${quoteVisible ? 'quote-visible' : 'quote-hidden'}`}><blockquote className="main-quote">“{currentQuote.text}”</blockquote><p className="quote-author">— {currentQuote.author}</p><div className="quote-divider" /></div>
-          <div className="entry-container"><div className="glass-card"><div className="type-toggle">{(['movie', 'tv', 'book'] as MediaKind[]).map((type) => <button className={`type-btn ${mediaType === type ? 'active' : ''}`} key={type} onClick={() => setMediaType(type)} type="button">{type === 'movie' ? 'Movie' : type === 'tv' ? 'TV' : 'Book'}</button>)}</div><form className="search-wrapper" onSubmit={(event) => { event.preventDefault(); startCreate() }}><input className="search-input" onChange={(event) => setQuery(event.target.value)} placeholder="记录今天的观看或阅读..." value={query} /><button className="search-btn" type="submit">Root</button></form></div></div>
+          <div className="entry-container"><div className="glass-card"><div className="type-toggle">{(['movie', 'tv', 'book'] as MediaKind[]).map((type) => <button className={`type-btn ${mediaType === type ? 'active' : ''}`} key={type} onClick={() => setMediaType(type)} type="button">{type === 'movie' ? 'Movie' : type === 'tv' ? 'TV' : 'Book'}</button>)}</div><form className="search-wrapper" onSubmit={(event) => { event.preventDefault(); void searchMedia() }}><input className="search-input" onChange={(event) => setQuery(event.target.value)} placeholder="记录今天的观看或阅读..." value={query} /><button className="search-btn" type="submit">{mediaType === 'book' ? 'Root' : 'Search'}</button></form></div></div>
         </section>
         <section className="library-entrance"><button className="library-btn" onClick={() => requireLogin('library')} type="button"><span className="library-btn-icon">◇</span><span className="library-btn-text">我的库</span><span className="library-btn-count">{auth.session ? entries.length : '—'}</span></button></section>
       </div>
@@ -237,11 +274,11 @@ function App() {
         <button aria-label="关闭弹层" className="modal-overlay" onClick={closeModal} type="button" />
         <AuthPanel active={modal === 'auth'} configured={auth.configured} error={auth.error} onClose={closeModal} onLogin={auth.login} onRegister={auth.register} />
 
-        <div className={`poster-modal glass-panel ${modal === 'search' ? 'active' : ''}`}><div className="poster-modal-header"><h3 className="poster-modal-title">选择作品</h3><button className="modal-close-btn" onClick={closeModal} type="button">×</button></div><div className="poster-modal-body"><p className="migration-note">{dataError || '搜索将在后续通过 Netlify Function 接入 TMDB。本阶段可以直接填写记录。'}</p><div className="poster-upload-option"><button className="upload-own-btn" disabled={mediaType === 'tv'} onClick={startCreate} type="button"><span className="upload-own-icon">+</span><span>手动填写记录</span></button></div></div></div>
+        <div className={`poster-modal glass-panel ${modal === 'search' ? 'active' : ''}`}><div className="poster-modal-header"><h3 className="poster-modal-title">选择作品</h3><button className="modal-close-btn" onClick={closeModal} type="button">×</button></div><div className="poster-modal-body">{searching ? <div className="library-empty"><div className="loading-spinner" /><p className="library-empty-text">正在搜索…</p></div> : dataError ? <p className="migration-note">{dataError}</p> : searchResults.length ? <div className="poster-grid">{searchResults.map((result) => <button className="poster-item" key={`${result.type}-${result.id}`} onClick={() => selectSearchResult(result)} type="button">{result.poster ? <img alt={result.title} className="poster-item-img" src={result.poster} /> : <span className="poster-item-img poster-placeholder">无封面</span>}<span className="poster-item-info"><span className="poster-item-title">{result.title}</span></span></button>)}</div> : <p className="migration-note">没有找到相关作品，可以手动填写。</p>}<div className="poster-upload-option"><button className="upload-own-btn" onClick={startCreate} type="button"><span className="upload-own-icon">+</span><span>没找到？手动填写</span></button></div></div></div>
 
         <div className={`review-modal glass-panel ${modal === 'review' ? 'active' : ''}`}><button className="modal-close-btn review-close-btn" onClick={closeModal} type="button">×</button><div className="review-modal-content"><div className="review-poster-section">{draft.poster ? <img alt={draft.title} className="review-poster-img" src={draft.poster} /> : <div className="review-poster-img poster-placeholder">无封面</div>}</div><div className="review-form-section"><input className="review-title-input" onChange={(event) => setDraft((value) => ({ ...value, title: event.target.value }))} placeholder="作品名称" value={draft.title} /><input className="review-year-input" onChange={(event) => setDraft((value) => ({ ...value, poster: event.target.value }))} placeholder="封面图片 URL (选填)" value={draft.poster} /><input className="review-year-input" onChange={(event) => setDraft((value) => ({ ...value, date: event.target.value }))} type="date" value={draft.date} /><div className="review-rating-section"><div className="star-rating">{Array.from({ length: 5 }, (_, index) => <button className={`star ${index < draft.rating ? 'active' : ''}`} key={index} onClick={() => setDraft((value) => ({ ...value, rating: index + 1 }))} type="button">★</button>)}</div></div><div className="review-textarea-section"><textarea className="review-textarea" onChange={(event) => setDraft((value) => ({ ...value, review: event.target.value }))} placeholder="记录你靠近的宇宙..." value={draft.review} /></div>{dataError && <p className="data-status-error">{dataError}</p>}<div className="review-actions"><button className="review-action-btn abandon" onClick={closeModal} type="button">放弃</button><button className="review-action-btn save-later" disabled={saving} onClick={() => void saveDraft(true)} type="button">先入库稍后写</button><button className="review-action-btn root-btn" disabled={saving} onClick={() => void saveDraft(false)} type="button">{saving ? '保存中…' : 'Root'}</button></div></div></div></div>
 
-        <div className={`library-modal glass-panel ${modal === 'library' ? 'active' : ''}`}><div className="library-modal-header"><div className="library-header-left"><h3 className="library-modal-title">我的库</h3><span className="library-record-count">{entries.length} 条记录</span></div><div className="library-header-right"><button className={`library-action-btn ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode((mode) => mode === 'grid' ? 'list' : 'grid')} title="切换视图" type="button">⊞</button><button className={`library-action-btn ${particlesEnabled ? 'active' : ''}`} onClick={() => setParticlesEnabled((value) => !value)} title="粒子开关" type="button">◆</button><button className="modal-close-btn modal-close-inline" onClick={closeModal} type="button">×</button></div></div><div className="library-filters"><div className="library-filters-inner"><div className="filter-search-wrapper"><input className="filter-search-input" onChange={(event) => setFilterQuery(event.target.value)} placeholder="搜索标题或评论..." value={filterQuery} />{filterQuery && <button className="filter-clear-btn" onClick={() => setFilterQuery('')} type="button">×</button>}</div><div className="filter-type-btns">{(['all', 'movie', 'book'] as const).map((type) => <button className={`filter-type-btn ${filterType === type ? 'active' : ''}`} key={type} onClick={() => setFilterType(type)} type="button">{type === 'all' ? '全部' : type === 'movie' ? '电影' : '书籍'}</button>)}</div><div className="filter-rating-wrapper"><span className="filter-rating-label">星级</span>{[0, 4, 5].map((rating) => <button className={`filter-type-btn ${ratingFilter === rating ? 'active' : ''}`} key={rating} onClick={() => setRatingFilter(rating)} type="button">{rating === 0 ? '全部' : `≥${rating}`}</button>)}</div><span className="filter-result-count"><span>{visibleRecords.length}</span> 条</span></div></div><div className="library-modal-body">{entriesLoading ? <div className="library-empty"><div className="loading-spinner" /><p className="library-empty-text">正在读取记录…</p></div> : dataError ? <div className="library-empty"><p className="library-empty-text">{dataError}</p></div> : groups.length ? groups.map((group) => <section className="library-group" data-season={group.season} key={group.label}><h4 className="library-group-title">{group.label} · {getSeasonName(group.season)}</h4><div className={viewMode === 'grid' ? 'library-records-grid' : 'library-records-list'}>{group.records.map((record) => <article className={`library-record library-record-${viewMode}`} key={record.id} onClick={() => { setSelectedRecord(record); setModal('detail') }}>{viewMode === 'grid' ? record.poster ? <img alt={record.title} className="library-record-poster" src={record.poster} /> : <div className="library-record-poster poster-placeholder">无封面</div> : <>{record.poster ? <img alt={record.title} className="library-record-poster" src={record.poster} /> : <div className="library-record-poster poster-placeholder">无封面</div>}<div className="library-record-info"><h5 className="library-record-title">{record.title}{record.pending ? ' · 待写' : ''}</h5><p className="library-record-meta">{record.date ?? '未设置日期'} · {record.type}</p><div className="library-record-rating"><Stars rating={record.rating} /></div><div className="record-particle-wrapper"><p className="record-comment">{record.review || '（暂无记录）'}</p><ParticleCover enabled={particlesEnabled} onReveal={() => setRevealed((items) => new Set(items).add(record.id))} revealed={revealed.has(record.id)} /></div></div></>}</article>)}</div></section>) : <div className="library-empty"><div className="library-empty-icon">◇</div><p className="library-empty-text">还没有记录</p></div>}</div></div>
+        <div className={`library-modal glass-panel ${modal === 'library' ? 'active' : ''}`}><div className="library-modal-header"><div className="library-header-left"><h3 className="library-modal-title">我的库</h3><span className="library-record-count">{entries.length} 条记录</span></div><div className="library-header-right"><button className={`library-action-btn ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode((mode) => mode === 'grid' ? 'list' : 'grid')} title="切换视图" type="button">⊞</button><button className={`library-action-btn ${particlesEnabled ? 'active' : ''}`} onClick={() => setParticlesEnabled((value) => !value)} title="粒子开关" type="button">◆</button><button className="modal-close-btn modal-close-inline" onClick={closeModal} type="button">×</button></div></div><div className="library-filters"><div className="library-filters-inner"><div className="filter-search-wrapper"><input className="filter-search-input" onChange={(event) => setFilterQuery(event.target.value)} placeholder="搜索标题或评论..." value={filterQuery} />{filterQuery && <button className="filter-clear-btn" onClick={() => setFilterQuery('')} type="button">×</button>}</div><div className="filter-type-btns">{(['all', 'movie', 'tv', 'book'] as const).map((type) => <button className={`filter-type-btn ${filterType === type ? 'active' : ''}`} key={type} onClick={() => setFilterType(type)} type="button">{type === 'all' ? '全部' : type === 'movie' ? '电影' : type === 'tv' ? '剧集' : '书籍'}</button>)}</div><div className="filter-rating-wrapper"><span className="filter-rating-label">星级</span>{[0, 4, 5].map((rating) => <button className={`filter-type-btn ${ratingFilter === rating ? 'active' : ''}`} key={rating} onClick={() => setRatingFilter(rating)} type="button">{rating === 0 ? '全部' : `≥${rating}`}</button>)}</div><span className="filter-result-count"><span>{visibleRecords.length}</span> 条</span></div></div><div className="library-modal-body">{entriesLoading ? <div className="library-empty"><div className="loading-spinner" /><p className="library-empty-text">正在读取记录…</p></div> : dataError ? <div className="library-empty"><p className="library-empty-text">{dataError}</p></div> : groups.length ? groups.map((group) => <section className="library-group" data-season={group.season} key={group.label}><h4 className="library-group-title">{group.label} · {getSeasonName(group.season)}</h4><div className={viewMode === 'grid' ? 'library-records-grid' : 'library-records-list'}>{group.records.map((record) => <article className={`library-record library-record-${viewMode}`} key={record.id} onClick={() => { setSelectedRecord(record); setModal('detail') }}>{viewMode === 'grid' ? record.poster ? <img alt={record.title} className="library-record-poster" src={record.poster} /> : <div className="library-record-poster poster-placeholder">无封面</div> : <>{record.poster ? <img alt={record.title} className="library-record-poster" src={record.poster} /> : <div className="library-record-poster poster-placeholder">无封面</div>}<div className="library-record-info"><h5 className="library-record-title">{record.title}{record.pending ? ' · 待写' : ''}</h5><p className="library-record-meta">{record.date ?? '未设置日期'} · {record.type}</p><div className="library-record-rating"><Stars rating={record.rating} /></div><div className="record-particle-wrapper"><p className="record-comment">{record.review || '（暂无记录）'}</p><ParticleCover enabled={particlesEnabled} onReveal={() => setRevealed((items) => new Set(items).add(record.id))} revealed={revealed.has(record.id)} /></div></div></>}</article>)}</div></section>) : <div className="library-empty"><div className="library-empty-icon">◇</div><p className="library-empty-text">还没有记录</p></div>}</div></div>
 
         {selectedRecord && <><div className={`detail-modal glass-panel ${modal === 'detail' ? 'active' : ''}`}><button className="modal-close-btn detail-close-btn" onClick={closeModal} type="button">×</button><div className="detail-modal-content"><div className="detail-poster-section">{selectedRecord.poster ? <img alt={selectedRecord.title} className="detail-poster-img" src={selectedRecord.poster} /> : <div className="detail-poster-img poster-placeholder">无封面</div>}</div><div className="detail-info-section"><h3 className="detail-title">{selectedRecord.title}</h3><p className="detail-meta">{selectedRecord.date ?? '未设置日期'} · {selectedRecord.type}</p><div className="detail-rating"><Stars rating={selectedRecord.rating} /></div><div className="detail-comment-section"><p className="detail-comment">{selectedRecord.review || '（暂无记录）'}</p></div>{dataError && <p className="data-status-error">{dataError}</p>}<div className="detail-actions"><button className="detail-action-btn" onClick={() => startEdit(selectedRecord)} type="button">编辑</button><button className="detail-action-btn" onClick={() => setModal('export')} type="button">导出</button><button className="detail-action-btn delete" onClick={() => void removeSelected()} type="button">删除</button></div></div></div></div><div className={`export-panel glass-panel ${modal === 'export' ? 'active' : ''}`}><button className="modal-close-btn" onClick={closeModal} type="button">×</button><div className="export-card-preview"><span>MOON DUST</span><h3>{selectedRecord.title}</h3><p>{selectedRecord.date ?? ''} · {'★'.repeat(selectedRecord.rating ?? 0)}</p><blockquote>{selectedRecord.review}</blockquote></div><div className="export-actions-row"><button className="detail-action-btn" onClick={closeModal} type="button">取消</button><button className="review-action-btn root-btn" onClick={downloadExport} type="button">下载图片</button></div></div></>}
       </div>

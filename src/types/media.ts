@@ -1,4 +1,4 @@
-export type MediaType = 'movie' | 'book'
+export type MediaType = 'movie' | 'tv' | 'book'
 
 export interface MediaRecord {
   id: number

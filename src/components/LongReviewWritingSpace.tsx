@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { exportLongReviewImages } from '../lib/longReviewExport'
 import { formatDisplayDate } from '../lib/date'
-import { getLongReview, saveLongReview } from '../lib/longReviews'
+import { getCachedLongReview, getLongReview, saveLongReview } from '../lib/longReviews'
+import type { LongReviewDraft } from '../types/longReview'
 import type { MediaRecord } from '../types/media'
 
 interface LongReviewWritingSpaceProps {
@@ -9,7 +10,7 @@ interface LongReviewWritingSpaceProps {
   record: MediaRecord | null
   userId: string | null
   onClose: () => void
-  onSaved: () => void
+  onSaved: (entryId: number, review: LongReviewDraft) => void
 }
 
 function ratingLabel(rating: number | null) {
@@ -26,18 +27,39 @@ export function LongReviewWritingSpace({ active, record, userId, onClose, onSave
 
   useEffect(() => {
     if (!active || !record || !userId) return
-    const draft = getLongReview(userId, record.id)
-    setTitle(draft.title)
-    setBody(draft.body)
-    setStatus(draft.updatedAt ? '已恢复上次保存的文字' : '')
-    loadedRecordRef.current = record.id
+    let current = true
+    loadedRecordRef.current = null
+    setTitle('')
+    setBody('')
+    setStatus('正在读取云端长评…')
+    getLongReview(userId, record.id)
+      .then((draft) => {
+        if (!current) return
+        setTitle(draft.title)
+        setBody(draft.body)
+        setStatus(draft.updatedAt ? '已从云端恢复上次保存的文字' : '')
+        loadedRecordRef.current = record.id
+      })
+      .catch(() => {
+        if (!current) return
+        const cached = getCachedLongReview(userId, record.id)
+        setTitle(cached.title)
+        setBody(cached.body)
+        setStatus('云端读取失败，已恢复本地草稿')
+        loadedRecordRef.current = record.id
+      })
+    return () => { current = false }
   }, [active, record, userId])
 
   useEffect(() => {
     if (!active || !record || !userId || loadedRecordRef.current !== record.id) return
     const timer = window.setTimeout(() => {
       saveLongReview(userId, record.id, { title, body })
-      setStatus('已自动保存')
+        .then((saved) => {
+          setStatus('已自动保存到云端')
+          onSaved(record.id, saved)
+        })
+        .catch(() => setStatus('网络异常，已保留本地草稿'))
     }, 700)
     return () => window.clearTimeout(timer)
   }, [active, body, onSaved, record, title, userId])
@@ -51,19 +73,33 @@ export function LongReviewWritingSpace({ active, record, userId, onClose, onSave
 
   if (!record || !userId) return null
 
-  const save = () => {
-    const saved = saveLongReview(userId, record.id, { title, body })
-    setStatus(`已保存 · ${new Date(saved.updatedAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`)
-    onSaved()
+  const save = async () => {
+    if (loadedRecordRef.current !== record.id) return
+    try {
+      const saved = await saveLongReview(userId, record.id, { title, body })
+      setStatus(`已保存到云端 · ${new Date(saved.updatedAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`)
+      onSaved(record.id, saved)
+    } catch {
+      setStatus('云端保存失败，已保留本地草稿')
+    }
   }
 
-  const close = () => {
-    saveLongReview(userId, record.id, { title, body })
-    onSaved()
+  const close = async () => {
+    if (loadedRecordRef.current !== record.id) {
+      onClose()
+      return
+    }
+    try {
+      const saved = await saveLongReview(userId, record.id, { title, body })
+      onSaved(record.id, saved)
+    } catch {
+      // saveLongReview caches the draft locally before attempting the network request.
+    }
     onClose()
   }
 
   const exportImages = async () => {
+    if (loadedRecordRef.current !== record.id) return
     if (!body.trim()) {
       setStatus('写下一些文字后再导出。')
       bodyRef.current?.focus()
@@ -72,8 +108,12 @@ export function LongReviewWritingSpace({ active, record, userId, onClose, onSave
     setExporting(true)
     setStatus('正在排版图片…')
     try {
-      saveLongReview(userId, record.id, { title, body })
-      onSaved()
+      try {
+        const saved = await saveLongReview(userId, record.id, { title, body })
+        onSaved(record.id, saved)
+      } catch {
+        // The current draft is cached locally before the cloud request runs.
+      }
       const pageCount = await exportLongReviewImages(record, title, body)
       setStatus(pageCount > 1 ? `已导出 ${pageCount} 页图片` : '图片已导出')
     } catch (error) {
@@ -86,10 +126,10 @@ export function LongReviewWritingSpace({ active, record, userId, onClose, onSave
   return (
     <section className={`long-review-space ${active ? 'active' : ''}`} aria-label="长评写作空间">
       <header className="long-review-topbar">
-        <button className="long-review-back" onClick={close} type="button">返回</button>
+        <button className="long-review-back" onClick={() => void close()} type="button">返回</button>
         <span>MOON DUST</span>
         <div className="long-review-actions">
-          <button onClick={save} type="button">保存</button>
+          <button onClick={() => void save()} type="button">保存</button>
           <button disabled={exporting} onClick={() => void exportImages()} type="button">{exporting ? '生成中…' : '导出图片'}</button>
         </div>
       </header>

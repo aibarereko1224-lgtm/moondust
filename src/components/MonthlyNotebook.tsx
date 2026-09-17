@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { MediaRecord } from '../types/media'
+import type { LongReviewMap } from '../types/longReview'
 import type { NotebookMode, NotebookTheme } from '../types/notebook'
 import { availableNotebookMonths, buildNotebookMonth, buildNotebookPages, shiftMonth } from '../lib/notebook'
 import { exportNotebookZip } from '../lib/notebookExport'
@@ -12,11 +13,11 @@ interface MonthlyNotebookProps {
   theme: NotebookTheme
   onClose: () => void
   onOpenRecord: (record: MediaRecord) => void
-  userId: string | null
+  longReviews: LongReviewMap
   longReviewRevision: number
 }
 
-export function MonthlyNotebook({ active, entries, initialMonth, theme, onClose, onOpenRecord, userId, longReviewRevision }: MonthlyNotebookProps) {
+export function MonthlyNotebook({ active, entries, initialMonth, theme, onClose, onOpenRecord, longReviews, longReviewRevision }: MonthlyNotebookProps) {
   const [monthKey, setMonthKey] = useState(initialMonth)
   const [pageIndex, setPageIndex] = useState(0)
   const [selectedMonths, setSelectedMonths] = useState<Set<string>>(new Set([initialMonth]))
@@ -104,7 +105,7 @@ export function MonthlyNotebook({ active, entries, initialMonth, theme, onClose,
       <div className="notebook-stage">
         <div className="notebook-page-shell">
           <button aria-label="上一页" className="notebook-page-turn previous" disabled={pageIndex === 0} onClick={() => setPageIndex((value) => value - 1)} type="button">‹</button>
-          <NotebookPage longReviewRevision={longReviewRevision} mode={mode} page={pages[pageIndex]} theme={theme} onOpenRecord={onOpenRecord} userId={userId} />
+          <NotebookPage longReviewRevision={longReviewRevision} longReviews={longReviews} mode={mode} page={pages[pageIndex]} theme={theme} onOpenRecord={onOpenRecord} />
           <button aria-label="下一页" className="notebook-page-turn next" disabled={pageIndex === pages.length - 1} onClick={() => setPageIndex((value) => value + 1)} type="button">›</button>
         </div>
       </div>

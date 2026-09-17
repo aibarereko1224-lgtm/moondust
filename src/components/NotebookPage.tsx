@@ -1,14 +1,14 @@
 import { type NotebookMode, type NotebookPage as NotebookPageModel, type NotebookTheme } from '../types/notebook'
 import type { MediaRecord } from '../types/media'
+import type { LongReviewMap } from '../types/longReview'
 import { formatDisplayDate } from '../lib/date'
-import { getLongReview } from '../lib/longReviews'
 
 interface NotebookPageProps {
   page: NotebookPageModel
   theme: NotebookTheme
   mode: NotebookMode
   onOpenRecord: (record: MediaRecord) => void
-  userId: string | null
+  longReviews: LongReviewMap
   longReviewRevision: number
 }
 
@@ -20,7 +20,7 @@ function Rating({ value }: { value: number | null }) {
   )
 }
 
-export function NotebookPage({ page, theme, mode, onOpenRecord, userId, longReviewRevision }: NotebookPageProps) {
+export function NotebookPage({ page, theme, mode, onOpenRecord, longReviews, longReviewRevision }: NotebookPageProps) {
   void longReviewRevision
   const { month } = page
   return (
@@ -43,7 +43,7 @@ export function NotebookPage({ page, theme, mode, onOpenRecord, userId, longRevi
       ) : (
         <div className="notebook-record-page">
           {page.records.map((record) => {
-            const longReview = userId ? getLongReview(userId, record.id) : null
+            const longReview = longReviews[record.id]
             const displayedReview = longReview?.body || record.review || ''
             return (
             <button className="notebook-entry" key={record.id} onClick={() => onOpenRecord(record)} type="button">

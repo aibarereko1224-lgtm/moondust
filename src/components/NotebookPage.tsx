@@ -24,7 +24,7 @@ export function NotebookPage({ page, theme, mode, onOpenRecord, userId, longRevi
   void longReviewRevision
   const { month } = page
   return (
-    <article className="notebook-paper" data-notebook-mode={mode} data-notebook-theme={theme}>
+    <article className="notebook-paper" data-notebook-mode={mode} data-notebook-page={page.kind} data-notebook-theme={theme}>
       <div className="notebook-binding" aria-hidden="true" />
       <header className="notebook-paper-header">
         <span>MOON DUST · MONTHLY NOTEBOOK</span>

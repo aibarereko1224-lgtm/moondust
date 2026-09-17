@@ -21,6 +21,8 @@ export type NotebookPage =
   | { kind: 'records'; pageNumber: number; month: NotebookMonth; records: MediaRecord[] }
 
 export type NotebookTheme = 'forest' | 'starry' | 'stream' | 'desert'
+export type NotebookMode = 'day' | 'night'
+export type NotebookFont = 'serif' | 'sans' | 'handwriting'
 
 export const mediaTypeLabels: Record<MediaType, string> = {
   movie: 'MOVIE',

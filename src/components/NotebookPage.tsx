@@ -1,20 +1,29 @@
-import { mediaTypeLabels, type NotebookPage as NotebookPageModel, type NotebookTheme } from '../types/notebook'
+import { type NotebookMode, type NotebookPage as NotebookPageModel, type NotebookTheme } from '../types/notebook'
 import type { MediaRecord } from '../types/media'
 
 interface NotebookPageProps {
   page: NotebookPageModel
   theme: NotebookTheme
+  mode: NotebookMode
   onOpenRecord: (record: MediaRecord) => void
 }
 
 function Rating({ value }: { value: number | null }) {
-  return <span className="notebook-rating" aria-label={value ? `${value} 星` : '未评分'}>{value ? '★'.repeat(value) : '—'}</span>
+  return (
+    <span className="notebook-rating" aria-label={value ? `${value} 星` : '未评分'}>
+      {Array.from({ length: 5 }, (_, index) => <span className={value && index < value ? 'is-filled' : ''} key={index}>☆</span>)}
+    </span>
+  )
 }
 
-export function NotebookPage({ page, theme, onOpenRecord }: NotebookPageProps) {
+function formatNotebookDate(value: string | null) {
+  return value ? value.replaceAll('-', '.') : '日期未记'
+}
+
+export function NotebookPage({ page, theme, mode, onOpenRecord }: NotebookPageProps) {
   const { month } = page
   return (
-    <article className="notebook-paper" data-notebook-theme={theme}>
+    <article className="notebook-paper" data-notebook-mode={mode} data-notebook-theme={theme}>
       <div className="notebook-binding" aria-hidden="true" />
       <header className="notebook-paper-header">
         <span>MOON DUST · MONTHLY NOTEBOOK</span>
@@ -28,16 +37,7 @@ export function NotebookPage({ page, theme, onOpenRecord }: NotebookPageProps) {
             <span>{month.monthName}</span>
             <small>{month.year}</small>
           </div>
-          <p className="notebook-cover-count">{month.stats.total} {month.stats.total === 1 ? 'story' : 'stories'} this month</p>
-          {month.stats.total > 0 && (
-            <dl className="notebook-cover-stats">
-              <div><dt>MOVIES</dt><dd>{month.stats.movie}</dd></div>
-              <div><dt>TV</dt><dd>{month.stats.tv}</dd></div>
-              <div><dt>BOOKS</dt><dd>{month.stats.book}</dd></div>
-            </dl>
-          )}
-          {month.stats.total === 0 && <p className="notebook-empty-note">Nothing recorded yet.</p>}
-          <span className="notebook-hand-mark" aria-hidden="true">⌁</span>
+          <p className="notebook-cover-note">记录你靠近的宇宙。</p>
         </div>
       ) : (
         <div className="notebook-record-page">
@@ -48,13 +48,14 @@ export function NotebookPage({ page, theme, onOpenRecord }: NotebookPageProps) {
                   {record.poster ? <img alt="" className="notebook-poster" src={record.poster} /> : <span className="notebook-poster notebook-poster-empty">NO IMAGE</span>}
                 </div>
                 <div className="notebook-entry-meta">
-                  <span className="notebook-entry-type">{mediaTypeLabels[record.type]}</span>
-                  <h3>{record.title}</h3>
-                  <p>{record.date ?? 'UNDATED'} · <Rating value={record.rating} /></p>
+                  <h3>《{record.title}》</h3>
+                  <div className="notebook-entry-annotation">
+                    <Rating value={record.rating} />
+                    <time dateTime={record.date ?? undefined}>{formatNotebookDate(record.date)}</time>
+                  </div>
                 </div>
               </div>
               <div className="notebook-review">
-                <span>我的感想</span>
                 <p className={record.review ? '' : 'is-empty'}>{record.review}</p>
               </div>
             </button>
@@ -64,7 +65,7 @@ export function NotebookPage({ page, theme, onOpenRecord }: NotebookPageProps) {
       )}
 
       <footer className="notebook-paper-footer">
-        <span>{month.monthName.toLocaleLowerCase()}, in stories</span>
+        <span>Moon Dust Notebook</span>
         <span>{String(page.pageNumber).padStart(2, '0')}</span>
       </footer>
     </article>

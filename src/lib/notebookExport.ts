@@ -1,6 +1,6 @@
 import JSZip from 'jszip'
 import type { MediaRecord } from '../types/media'
-import { mediaTypeLabels, type NotebookPage, type NotebookTheme } from '../types/notebook'
+import { type NotebookMode, type NotebookPage, type NotebookTheme } from '../types/notebook'
 import { buildNotebookMonth, buildNotebookPages } from './notebook'
 
 const PAGE_WIDTH = 1200
@@ -14,6 +14,27 @@ const themes: Record<NotebookTheme, { paper: string; shade: string; ink: string;
   stream: { paper: '#ececeb', shade: '#d8e2e5', ink: '#29363b', muted: '#69767b', accent: '#587987', line: '#a6b8bd' },
   desert: { paper: '#f0e7d8', shade: '#e1d1bb', ink: '#3d342d', muted: '#7e7064', accent: '#9a7657', line: '#c3ac91' },
   starry: { paper: '#e8e7e5', shade: '#d7d7df', ink: '#2e2e3c', muted: '#707080', accent: '#686b91', line: '#adaec1' },
+}
+
+const nightThemes: Record<NotebookTheme, { accent: string }> = {
+  forest: { accent: '#93ad99' },
+  stream: { accent: '#91b4c0' },
+  desert: { accent: '#c6a27f' },
+  starry: { accent: '#aaaed8' },
+}
+
+const typographyC = {
+  font: '"Noto Sans SC", "Microsoft YaHei", sans-serif',
+  size: 34,
+  lineHeight: 68,
+  letterSpacing: '0.85px',
+  weight: 300,
+  color: '#41423d',
+}
+
+function paletteFor(theme: NotebookTheme, mode: NotebookMode) {
+  if (mode === 'day') return themes[theme]
+  return { paper: '#202326', shade: '#141617', ink: '#e2ddd3', muted: '#aaa69f', line: '#55595a', accent: nightThemes[theme].accent }
 }
 
 function roundedRect(context: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
@@ -63,14 +84,14 @@ async function loadImage(source: string | null) {
   }
 }
 
-function drawPaper(context: CanvasRenderingContext2D, theme: NotebookTheme, page: NotebookPage) {
-  const palette = themes[theme]
+function drawPaper(context: CanvasRenderingContext2D, theme: NotebookTheme, mode: NotebookMode, page: NotebookPage) {
+  const palette = paletteFor(theme, mode)
   context.fillStyle = palette.shade
   context.fillRect(0, 0, PAGE_WIDTH, PAGE_HEIGHT)
 
   const paperGradient = context.createLinearGradient(PAGE_MARGIN, 0, PAGE_WIDTH - PAGE_MARGIN, 0)
   paperGradient.addColorStop(0, palette.paper)
-  paperGradient.addColorStop(0.5, '#f7f2e8')
+  paperGradient.addColorStop(0.5, mode === 'night' ? '#292d30' : '#f7f2e8')
   paperGradient.addColorStop(1, palette.paper)
   context.fillStyle = paperGradient
   context.shadowColor = 'rgba(26, 24, 21, .18)'
@@ -111,17 +132,17 @@ function drawPaper(context: CanvasRenderingContext2D, theme: NotebookTheme, page
 
   context.fillStyle = palette.muted
   context.font = '18px "PT Serif", Georgia, serif'
-  context.fillText(`${page.month.monthName.toLocaleLowerCase()}, in stories`, CONTENT_LEFT, 1510)
+  context.fillText('Moon Dust Notebook', CONTENT_LEFT, 1510)
   context.textAlign = 'right'
   context.fillText(String(page.pageNumber).padStart(2, '0'), CONTENT_RIGHT, 1510)
   context.textAlign = 'left'
 }
 
-function drawCover(context: CanvasRenderingContext2D, page: Extract<NotebookPage, { kind: 'cover' }>, theme: NotebookTheme) {
-  const palette = themes[theme]
+function drawCover(context: CanvasRenderingContext2D, page: Extract<NotebookPage, { kind: 'cover' }>, theme: NotebookTheme, mode: NotebookMode) {
+  const palette = paletteFor(theme, mode)
   const { month } = page
   context.fillStyle = palette.accent
-  context.font = '220px "Playfair Display", Georgia, serif'
+  context.font = `300 220px ${typographyC.font}`
   context.fillText(String(month.month).padStart(2, '0'), CONTENT_LEFT, 520)
 
   context.fillStyle = palette.ink
@@ -133,36 +154,15 @@ function drawCover(context: CanvasRenderingContext2D, page: Extract<NotebookPage
   context.fillStyle = palette.muted
   context.fillText(String(month.year), CONTENT_LEFT + 12, 650)
 
-  context.font = '28px "PT Serif", Georgia, serif'
-  context.fillStyle = palette.ink
-  context.fillText(`${month.stats.total} ${month.stats.total === 1 ? 'story' : 'stories'} this month`, CONTENT_LEFT + 12, 850)
-
-  if (month.stats.total > 0) {
-    const stats = [['MOVIES', month.stats.movie], ['TV', month.stats.tv], ['BOOKS', month.stats.book]] as const
-    stats.forEach(([label, value], index) => {
-      const x = CONTENT_LEFT + 12 + index * 240
-      context.font = '18px "PT Serif", Georgia, serif'
-      context.fillStyle = palette.muted
-      context.fillText(label, x, 950)
-      context.font = '34px "Playfair Display", Georgia, serif'
-      context.fillStyle = palette.ink
-      context.fillText(String(value), x, 1000)
-    })
-  } else {
-    context.font = '29px "Ma Shan Zheng", "Noto Serif SC", serif'
-    context.fillStyle = palette.muted
-    context.fillText('Nothing recorded yet.', CONTENT_LEFT + 12, 980)
-  }
-
-  context.font = '64px "Ma Shan Zheng", "Noto Serif SC", serif'
-  context.fillStyle = palette.accent
-  context.globalAlpha = 0.45
-  context.fillText('⌁', CONTENT_RIGHT - 100, 1270)
-  context.globalAlpha = 1
+  context.font = `${typographyC.weight} 28px ${typographyC.font}`
+  context.letterSpacing = typographyC.letterSpacing
+  context.fillStyle = mode === 'day' ? typographyC.color : palette.ink
+  context.fillText('记录你靠近的宇宙。', CONTENT_LEFT + 12, 850)
+  context.letterSpacing = '0px'
 }
 
-async function drawRecord(context: CanvasRenderingContext2D, record: MediaRecord, index: number, theme: NotebookTheme) {
-  const palette = themes[theme]
+async function drawRecord(context: CanvasRenderingContext2D, record: MediaRecord, index: number, theme: NotebookTheme, mode: NotebookMode) {
+  const palette = paletteFor(theme, mode)
   const top = 214 + index * 620
   const height = 548
   context.strokeStyle = palette.line
@@ -179,7 +179,7 @@ async function drawRecord(context: CanvasRenderingContext2D, record: MediaRecord
   const posterHeight = 302
   const image = await loadImage(record.poster)
   context.save()
-  roundedRect(context, posterX, posterY, posterWidth, posterHeight, 5)
+  roundedRect(context, posterX, posterY, posterWidth, posterHeight, 0)
   context.clip()
   if (image) {
     const scale = Math.max(posterWidth / image.width, posterHeight / image.height)
@@ -200,56 +200,49 @@ async function drawRecord(context: CanvasRenderingContext2D, record: MediaRecord
 
   const metaX = posterX + posterWidth + 48
   const metaWidth = CONTENT_RIGHT - metaX
-  context.fillStyle = palette.accent
-  context.font = '17px "PT Serif", Georgia, serif'
-  context.letterSpacing = '2px'
-  context.fillText(mediaTypeLabels[record.type], metaX, top + 48)
+  context.fillStyle = palette.ink
+  context.font = `300 35px ${typographyC.font}`
+  context.letterSpacing = typographyC.letterSpacing
+  drawLines(context, fitLines(context, `《${record.title}》`, metaWidth, 3), metaX, top + 78, 56)
   context.letterSpacing = '0px'
 
-  context.fillStyle = palette.ink
-  context.font = '38px "Noto Serif SC", "PT Serif", serif'
-  drawLines(context, fitLines(context, record.title, metaWidth, 3), metaX, top + 112, 52)
-
   context.fillStyle = palette.muted
-  context.font = '21px "PT Serif", Georgia, serif'
-  const rating = record.rating ? '★'.repeat(record.rating) : '—'
-  drawLines(context, fitLines(context, `${record.date ?? 'UNDATED'} · ${rating}`, metaWidth, 2), metaX, top + 286, 32)
+  context.font = '23px Georgia, "Times New Roman", serif'
+  const rating = Array.from({ length: 5 }, (_, ratingIndex) => record.rating && ratingIndex < record.rating ? '★' : '☆').join(' ')
+  context.fillText(rating, metaX, top + 245)
+  context.font = `300 19px ${typographyC.font}`
+  context.letterSpacing = '1.1px'
+  context.fillText(record.date?.replaceAll('-', '.') ?? '日期未记', metaX, top + 288)
+  context.letterSpacing = '0px'
 
-  const reviewTop = top + 356
-  context.fillStyle = palette.accent
-  context.font = '23px "Ma Shan Zheng", "Noto Serif SC", serif'
-  context.fillText('我的感想', CONTENT_LEFT, reviewTop)
-  context.strokeStyle = palette.line
-  context.globalAlpha = 0.42
-  context.beginPath()
-  context.moveTo(CONTENT_LEFT + 112, reviewTop - 8)
-  context.lineTo(CONTENT_RIGHT, reviewTop - 8)
-  context.stroke()
-  context.globalAlpha = 1
+  const reviewTop = top + 374
 
   if (record.review) {
-    context.fillStyle = palette.ink
-    context.font = '29px "Ma Shan Zheng", "Noto Serif SC", serif'
-    drawLines(context, fitLines(context, record.review, CONTENT_RIGHT - CONTENT_LEFT, 4), CONTENT_LEFT, reviewTop + 54, 45)
+    context.fillStyle = mode === 'day' ? typographyC.color : palette.ink
+    context.font = `${typographyC.weight} ${typographyC.size}px ${typographyC.font}`
+    context.letterSpacing = typographyC.letterSpacing
+    drawLines(context, fitLines(context, record.review, CONTENT_RIGHT - CONTENT_LEFT, 3), CONTENT_LEFT, reviewTop, typographyC.lineHeight)
+    context.letterSpacing = '0px'
   }
 }
 
-async function renderPage(page: NotebookPage, theme: NotebookTheme) {
+async function renderPage(page: NotebookPage, theme: NotebookTheme, mode: NotebookMode) {
   const canvas = document.createElement('canvas')
   canvas.width = PAGE_WIDTH
   canvas.height = PAGE_HEIGHT
   const context = canvas.getContext('2d')
   if (!context) throw new Error('当前浏览器无法生成 Notebook 图片。')
-  drawPaper(context, theme, page)
-  if (page.kind === 'cover') drawCover(context, page, theme)
-  else for (let index = 0; index < page.records.length; index += 1) await drawRecord(context, page.records[index], index, theme)
+  drawPaper(context, theme, mode, page)
+  if (page.kind === 'cover') drawCover(context, page, theme, mode)
+  else for (let index = 0; index < page.records.length; index += 1) await drawRecord(context, page.records[index], index, theme, mode)
   return await new Promise<Blob>((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Notebook 图片生成失败。')), 'image/png'))
 }
 
-export async function createNotebookZip(entries: MediaRecord[], monthKeys: string[], theme: NotebookTheme) {
+export async function createNotebookZip(entries: MediaRecord[], monthKeys: string[], theme: NotebookTheme, mode: NotebookMode = 'day') {
   if ('fonts' in document) {
     await Promise.allSettled([
       document.fonts.load('29px "Ma Shan Zheng"'),
+      document.fonts.load('38px "Noto Sans SC"'),
       document.fonts.load('38px "Noto Serif SC"'),
       document.fonts.load('46px "PT Serif"'),
     ])
@@ -259,7 +252,7 @@ export async function createNotebookZip(entries: MediaRecord[], monthKeys: strin
   for (const key of monthKeys) {
     const pages = buildNotebookPages(buildNotebookMonth(entries, key))
     for (const page of pages) {
-      const blob = await renderPage(page, theme)
+      const blob = await renderPage(page, theme, mode)
       zip.file(`MoonDust_${key}_${String(page.pageNumber).padStart(2, '0')}.png`, blob)
     }
   }
@@ -270,8 +263,8 @@ export async function createNotebookZip(entries: MediaRecord[], monthKeys: strin
   return { archive, name }
 }
 
-export async function exportNotebookZip(entries: MediaRecord[], monthKeys: string[], theme: NotebookTheme) {
-  const { archive, name } = await createNotebookZip(entries, monthKeys, theme)
+export async function exportNotebookZip(entries: MediaRecord[], monthKeys: string[], theme: NotebookTheme, mode: NotebookMode = 'day') {
+  const { archive, name } = await createNotebookZip(entries, monthKeys, theme, mode)
   const link = document.createElement('a')
   link.download = name
   link.href = URL.createObjectURL(archive)

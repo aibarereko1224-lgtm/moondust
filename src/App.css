@@ -1696,6 +1696,47 @@ html, body {
   gap: 9px;
 }
 
+.notebook-preferences,
+.notebook-preferences label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.notebook-preferences label > span {
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.notebook-preferences select,
+.notebook-mode-toggle {
+  height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 5px;
+  color: rgba(255, 255, 255, 0.68);
+  background: #15161a;
+  font-family: var(--font-serif);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.notebook-preferences select {
+  padding: 0 26px 0 9px;
+}
+
+.notebook-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+}
+
+.notebook-mode-toggle span {
+  color: var(--accent);
+  font-size: 15px;
+}
+
 .notebook-month-nav strong {
   min-width: 110px;
   color: rgba(255, 255, 255, 0.78);
@@ -1794,23 +1835,29 @@ html, body {
 }
 
 .notebook-paper {
-  --notebook-paper: #eee9db;
-  --notebook-paper-light: #f7f2e8;
-  --notebook-ink: #28332d;
-  --notebook-muted: #6d756f;
+  --notebook-paper: #eeeae2;
+  --notebook-paper-light: #f4f0e8;
+  --notebook-ink: #41423d;
+  --notebook-muted: #777870;
   --notebook-accent: #607b68;
-  --notebook-line: #a9b6a8;
+  --notebook-line: #b9b8ae;
+  --notebook-reading-font: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --notebook-body-size: 17px;
+  --notebook-body-leading: 2;
+  --notebook-body-tracking: 0.025em;
+  --notebook-reading-width: 720px;
   position: relative;
   flex: 0 0 auto;
-  width: min(67vh, 700px);
+  width: min(76vh, 900px);
   aspect-ratio: 3 / 4;
   padding: 6.5% 7.5% 5.5% 9.5%;
   overflow: hidden;
   color: var(--notebook-ink);
   background:
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.08) 0, rgba(255, 255, 255, 0.08) 1px, transparent 1px, transparent 12px),
+    linear-gradient(90deg, rgba(65, 67, 57, 0.025) 1px, transparent 1px) 0 0 / 42px 42px,
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.07) 0, rgba(255, 255, 255, 0.07) 1px, transparent 1px, transparent 11px),
     linear-gradient(90deg, var(--notebook-paper), var(--notebook-paper-light) 48%, var(--notebook-paper));
-  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.36), inset 0 0 0 1px rgba(70, 60, 50, 0.13);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.25), inset 0 0 0 1px rgba(70, 60, 50, 0.1);
 }
 
 .notebook-paper[data-notebook-theme="stream"] {
@@ -1839,6 +1886,20 @@ html, body {
   --notebook-accent: #686b91;
   --notebook-line: #adaec1;
 }
+
+.notebook-paper[data-notebook-mode="night"] {
+  --notebook-paper: #202326;
+  --notebook-paper-light: #292d30;
+  --notebook-ink: #e2ddd3;
+  --notebook-muted: #aaa69f;
+  --notebook-line: #55595a;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.56), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.notebook-paper[data-notebook-theme="forest"][data-notebook-mode="night"] { --notebook-accent: #93ad99; }
+.notebook-paper[data-notebook-theme="stream"][data-notebook-mode="night"] { --notebook-accent: #91b4c0; }
+.notebook-paper[data-notebook-theme="desert"][data-notebook-mode="night"] { --notebook-accent: #c6a27f; }
+.notebook-paper[data-notebook-theme="starry"][data-notebook-mode="night"] { --notebook-accent: #aaaed8; }
 
 .notebook-paper::after {
   position: absolute;
@@ -1903,9 +1964,9 @@ html, body {
 
 .notebook-cover-date strong {
   color: var(--notebook-accent);
-  font-family: var(--font-serif);
+  font-family: var(--notebook-reading-font);
   font-size: clamp(86px, 11vw, 154px);
-  font-weight: 400;
+  font-weight: 300;
   line-height: 0.9;
 }
 
@@ -1927,56 +1988,15 @@ html, body {
   letter-spacing: 0.12em;
 }
 
-.notebook-cover-count {
-  margin: 16% 0 0;
-  font-family: var(--font-serif);
-  font-size: clamp(15px, 1.6vw, 23px);
-}
-
-.notebook-cover-stats {
-  display: grid;
-  width: min(100%, 520px);
-  grid-template-columns: repeat(3, 1fr);
-  gap: 7%;
-  margin: 9% 0 0;
-}
-
-.notebook-cover-stats div {
-  min-width: 0;
-}
-
-.notebook-cover-stats dt {
-  overflow: hidden;
-  color: var(--notebook-muted);
-  font-family: var(--font-display);
-  font-size: clamp(8px, 0.8vw, 11px);
-  letter-spacing: 0.13em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.notebook-cover-stats dd {
-  margin: 8px 0 0;
-  font-family: var(--font-serif);
-  font-size: clamp(21px, 2.5vw, 34px);
-}
-
-.notebook-empty-note {
-  margin: 12% 0 0;
-  color: var(--notebook-muted);
-  font-family: 'Ma Shan Zheng', 'Noto Serif SC', serif;
-  font-size: clamp(18px, 2vw, 28px);
-}
-
-.notebook-hand-mark {
-  position: absolute;
-  right: 8%;
-  bottom: 14%;
-  color: var(--notebook-accent);
-  font-family: 'Ma Shan Zheng', cursive;
-  font-size: clamp(42px, 5vw, 68px);
-  opacity: 0.38;
-  transform: rotate(-8deg);
+.notebook-cover-note {
+  max-width: var(--notebook-reading-width);
+  margin: 18% 0 0 1%;
+  color: var(--notebook-ink);
+  font-family: var(--notebook-reading-font);
+  font-size: clamp(13px, 1.15vw, 17px);
+  font-weight: 300;
+  line-height: var(--notebook-body-leading);
+  letter-spacing: var(--notebook-body-tracking);
 }
 
 .notebook-record-page {
@@ -2002,13 +2022,13 @@ html, body {
 .notebook-entry {
   display: flex;
   flex-direction: column;
-  padding: 4.2% 0 3.2%;
+  padding: 4.8% 0 4%;
   text-align: left;
   cursor: pointer;
 }
 
 .notebook-entry:hover {
-  background: color-mix(in srgb, var(--notebook-accent) 4%, transparent);
+  background: color-mix(in srgb, var(--notebook-accent) 2.5%, transparent);
 }
 
 .notebook-entry-main {
@@ -2032,8 +2052,8 @@ html, body {
   align-items: center;
   justify-content: center;
   object-fit: cover;
-  border-radius: 3px;
-  box-shadow: 0 7px 16px rgba(52, 44, 36, 0.13);
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .notebook-poster-empty {
@@ -2049,82 +2069,72 @@ html, body {
   overflow: hidden;
 }
 
-.notebook-entry-type {
-  display: block;
-  overflow: hidden;
-  color: var(--notebook-accent);
-  font-family: var(--font-display);
-  font-size: clamp(8px, 0.7vw, 10px);
-  letter-spacing: 0.16em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .notebook-entry-meta h3 {
   display: -webkit-box;
   max-width: 100%;
-  margin: 6% 0 4%;
+  margin: 2% 0 8%;
   overflow: hidden;
-  font-family: var(--font-serif);
-  font-size: clamp(16px, 1.8vw, 25px);
-  font-weight: 400;
-  line-height: 1.42;
+  font-family: var(--notebook-reading-font);
+  font-size: clamp(16px, 1.55vw, 22px);
+  font-weight: 300;
+  line-height: 1.6;
+  letter-spacing: 0.025em;
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
 
-.notebook-entry-meta > p {
-  display: -webkit-box;
-  max-width: 100%;
-  margin: 0;
-  overflow: hidden;
+.notebook-entry-annotation {
+  display: flex;
+  align-items: center;
+  gap: clamp(12px, 2vw, 24px);
   color: var(--notebook-muted);
-  font-family: var(--font-display);
-  font-size: clamp(8px, 0.8vw, 11px);
-  line-height: 1.65;
-  overflow-wrap: anywhere;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  font-family: var(--notebook-reading-font);
+  font-size: clamp(9px, 0.85vw, 12px);
+  font-weight: 300;
+  letter-spacing: 0.06em;
 }
 
 .notebook-rating {
+  display: inline-flex;
+  color: color-mix(in srgb, var(--notebook-muted) 64%, transparent);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.18em;
+  letter-spacing: 0.12em;
+}
+
+.notebook-rating .is-filled {
   color: var(--notebook-accent);
-  letter-spacing: 0.04em;
+}
+
+.notebook-rating .is-filled::before {
+  position: absolute;
+  content: '★';
+}
+
+.notebook-rating span {
+  position: relative;
 }
 
 .notebook-review {
   min-width: 0;
   min-height: 0;
-  margin-top: 3.5%;
+  width: min(100%, var(--notebook-reading-width));
+  margin-top: 4.5%;
   overflow: hidden;
-}
-
-.notebook-review > span {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--notebook-accent);
-  font-family: 'Ma Shan Zheng', 'Noto Serif SC', serif;
-  font-size: clamp(13px, 1.25vw, 18px);
-}
-
-.notebook-review > span::after {
-  height: 1px;
-  flex: 1;
-  background: color-mix(in srgb, var(--notebook-line) 48%, transparent);
-  content: '';
 }
 
 .notebook-review p {
   display: -webkit-box;
   max-width: 100%;
-  max-height: 6.8em;
-  margin: 2.4% 0 0;
+  max-height: 8em;
+  margin: 0;
   overflow: hidden;
-  font-family: 'Ma Shan Zheng', 'Noto Serif SC', serif;
-  font-size: clamp(15px, 1.55vw, 22px);
-  line-height: 1.7;
+  font-family: var(--notebook-reading-font);
+  font-size: clamp(14px, 1.25vw, var(--notebook-body-size));
+  font-weight: 300;
+  line-height: var(--notebook-body-leading);
+  letter-spacing: var(--notebook-body-tracking);
   overflow-wrap: anywhere;
   white-space: pre-wrap;
   -webkit-box-orient: vertical;
@@ -2211,6 +2221,12 @@ html, body {
   }
 
   .notebook-toolbar-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .notebook-preferences {
     width: 100%;
     justify-content: center;
   }
@@ -2392,6 +2408,21 @@ html, body {
 
   .poster-item:active {
     transform: scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .twinkling-stars {
+    animation: none;
   }
 }
 

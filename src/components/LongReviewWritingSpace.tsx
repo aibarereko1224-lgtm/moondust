@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { exportLongReviewImages } from '../lib/longReviewExport'
+import { formatDisplayDate } from '../lib/date'
 import { getLongReview, saveLongReview } from '../lib/longReviews'
 import type { MediaRecord } from '../types/media'
 
@@ -8,13 +9,14 @@ interface LongReviewWritingSpaceProps {
   record: MediaRecord | null
   userId: string | null
   onClose: () => void
+  onSaved: () => void
 }
 
 function ratingLabel(rating: number | null) {
   return Array.from({ length: 5 }, (_, index) => rating && index < rating ? '★' : '☆').join(' ')
 }
 
-export function LongReviewWritingSpace({ active, record, userId, onClose }: LongReviewWritingSpaceProps) {
+export function LongReviewWritingSpace({ active, record, userId, onClose, onSaved }: LongReviewWritingSpaceProps) {
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [status, setStatus] = useState('')
@@ -38,7 +40,7 @@ export function LongReviewWritingSpace({ active, record, userId, onClose }: Long
       setStatus('已自动保存')
     }, 700)
     return () => window.clearTimeout(timer)
-  }, [active, body, record, title, userId])
+  }, [active, body, onSaved, record, title, userId])
 
   useEffect(() => {
     const textarea = bodyRef.current
@@ -52,10 +54,12 @@ export function LongReviewWritingSpace({ active, record, userId, onClose }: Long
   const save = () => {
     const saved = saveLongReview(userId, record.id, { title, body })
     setStatus(`已保存 · ${new Date(saved.updatedAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`)
+    onSaved()
   }
 
   const close = () => {
     saveLongReview(userId, record.id, { title, body })
+    onSaved()
     onClose()
   }
 
@@ -69,6 +73,7 @@ export function LongReviewWritingSpace({ active, record, userId, onClose }: Long
     setStatus('正在排版图片…')
     try {
       saveLongReview(userId, record.id, { title, body })
+      onSaved()
       const pageCount = await exportLongReviewImages(record, title, body)
       setStatus(pageCount > 1 ? `已导出 ${pageCount} 页图片` : '图片已导出')
     } catch (error) {
@@ -91,11 +96,16 @@ export function LongReviewWritingSpace({ active, record, userId, onClose }: Long
 
       <main className="long-review-paper">
         <header className="long-review-record">
-          {record.poster && <img alt="" className="long-review-poster" src={record.poster} />}
-          <div>
-            <p className="long-review-kicker">LONG REVIEW</p>
-            <h1>《{record.title}》</h1>
-            <p className="long-review-meta"><span>{ratingLabel(record.rating)}</span><time dateTime={record.date ?? undefined}>{record.date?.replaceAll('-', '.') ?? '日期未记'}</time></p>
+          <div className="long-review-film">
+            <div className="long-review-poster-column">
+              {record.poster ? <img alt={`${record.title} 海报`} className="long-review-poster" referrerPolicy="no-referrer" src={record.poster} /> : <div className="long-review-poster long-review-poster-empty">NO IMAGE</div>}
+              <time className="long-review-date" dateTime={record.date ?? undefined}>{formatDisplayDate(record.date)}</time>
+            </div>
+            <div className="long-review-film-info">
+              <p className="long-review-kicker">LONG REVIEW</p>
+              <h1>《{record.title}》</h1>
+              <p className="long-review-rating">{ratingLabel(record.rating)}</p>
+            </div>
           </div>
         </header>
 

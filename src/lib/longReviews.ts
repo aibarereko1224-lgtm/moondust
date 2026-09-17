@@ -27,3 +27,7 @@ export function saveLongReview(userId: string, entryId: number, draft: Pick<Long
   localStorage.setItem(storageKey(userId, entryId), JSON.stringify(value))
   return value
 }
+
+export function hasLongReview(userId: string, entryId: number) {
+  return Boolean(getLongReview(userId, entryId).body.trim())
+}

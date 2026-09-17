@@ -12,9 +12,11 @@ interface MonthlyNotebookProps {
   theme: NotebookTheme
   onClose: () => void
   onOpenRecord: (record: MediaRecord) => void
+  userId: string | null
+  longReviewRevision: number
 }
 
-export function MonthlyNotebook({ active, entries, initialMonth, theme, onClose, onOpenRecord }: MonthlyNotebookProps) {
+export function MonthlyNotebook({ active, entries, initialMonth, theme, onClose, onOpenRecord, userId, longReviewRevision }: MonthlyNotebookProps) {
   const [monthKey, setMonthKey] = useState(initialMonth)
   const [pageIndex, setPageIndex] = useState(0)
   const [selectedMonths, setSelectedMonths] = useState<Set<string>>(new Set([initialMonth]))
@@ -102,7 +104,7 @@ export function MonthlyNotebook({ active, entries, initialMonth, theme, onClose,
       <div className="notebook-stage">
         <div className="notebook-page-shell">
           <button aria-label="上一页" className="notebook-page-turn previous" disabled={pageIndex === 0} onClick={() => setPageIndex((value) => value - 1)} type="button">‹</button>
-          <NotebookPage mode={mode} page={pages[pageIndex]} theme={theme} onOpenRecord={onOpenRecord} />
+          <NotebookPage longReviewRevision={longReviewRevision} mode={mode} page={pages[pageIndex]} theme={theme} onOpenRecord={onOpenRecord} userId={userId} />
           <button aria-label="下一页" className="notebook-page-turn next" disabled={pageIndex === pages.length - 1} onClick={() => setPageIndex((value) => value + 1)} type="button">›</button>
         </div>
       </div>

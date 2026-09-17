@@ -1,11 +1,15 @@
 import { type NotebookMode, type NotebookPage as NotebookPageModel, type NotebookTheme } from '../types/notebook'
 import type { MediaRecord } from '../types/media'
+import { formatDisplayDate } from '../lib/date'
+import { getLongReview } from '../lib/longReviews'
 
 interface NotebookPageProps {
   page: NotebookPageModel
   theme: NotebookTheme
   mode: NotebookMode
   onOpenRecord: (record: MediaRecord) => void
+  userId: string | null
+  longReviewRevision: number
 }
 
 function Rating({ value }: { value: number | null }) {
@@ -16,11 +20,8 @@ function Rating({ value }: { value: number | null }) {
   )
 }
 
-function formatNotebookDate(value: string | null) {
-  return value ? value.replaceAll('-', '.') : '日期未记'
-}
-
-export function NotebookPage({ page, theme, mode, onOpenRecord }: NotebookPageProps) {
+export function NotebookPage({ page, theme, mode, onOpenRecord, userId, longReviewRevision }: NotebookPageProps) {
+  void longReviewRevision
   const { month } = page
   return (
     <article className="notebook-paper" data-notebook-mode={mode} data-notebook-theme={theme}>
@@ -41,7 +42,10 @@ export function NotebookPage({ page, theme, mode, onOpenRecord }: NotebookPagePr
         </div>
       ) : (
         <div className="notebook-record-page">
-          {page.records.map((record) => (
+          {page.records.map((record) => {
+            const longReview = userId ? getLongReview(userId, record.id) : null
+            const displayedReview = longReview?.body || record.review || ''
+            return (
             <button className="notebook-entry" key={record.id} onClick={() => onOpenRecord(record)} type="button">
               <div className="notebook-entry-main">
                 <div className="notebook-poster-wrap">
@@ -51,15 +55,16 @@ export function NotebookPage({ page, theme, mode, onOpenRecord }: NotebookPagePr
                   <h3>《{record.title}》</h3>
                   <div className="notebook-entry-annotation">
                     <Rating value={record.rating} />
-                    <time dateTime={record.date ?? undefined}>{formatNotebookDate(record.date)}</time>
+                    <time dateTime={record.date ?? undefined}>{formatDisplayDate(record.date)}</time>
                   </div>
                 </div>
               </div>
               <div className="notebook-review">
-                <p className={record.review ? '' : 'is-empty'}>{record.review}</p>
+                <p className={displayedReview ? '' : 'is-empty'}>{displayedReview}</p>
               </div>
             </button>
-          ))}
+            )
+          })}
           {page.records.length < 2 && <div className="notebook-entry-space" aria-hidden="true" />}
         </div>
       )}

@@ -1331,19 +1331,44 @@ html, body {
 .long-review-record {
   position: relative;
   z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: 32px;
   padding-bottom: 46px;
   border-bottom: 1px solid rgba(119, 120, 112, 0.3);
 }
 
-.long-review-poster {
-  width: 94px;
-  aspect-ratio: 2 / 3;
+.long-review-film {
+  display: flex;
+  align-items: center;
+  gap: clamp(30px, 5vw, 54px);
+}
+
+.long-review-poster-column {
+  display: flex;
   flex: 0 0 auto;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.long-review-poster {
+  display: block;
+  width: 148px;
+  aspect-ratio: 2 / 3;
   object-fit: cover;
+  background: #d9ddd5;
   box-shadow: 0 10px 24px rgba(50, 45, 39, 0.12);
+}
+
+.long-review-poster-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(65, 66, 61, 0.42);
+  font-family: var(--font-display);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+}
+
+.long-review-film-info {
+  min-width: 0;
 }
 
 .long-review-kicker {
@@ -1358,27 +1383,26 @@ html, body {
   margin: 0;
   color: #41423d;
   font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  font-size: clamp(22px, 3vw, 31px);
+  font-size: clamp(15px, 1.7vw, 19px);
   font-weight: 300;
   line-height: 1.55;
   letter-spacing: 0.025em;
 }
 
-.long-review-meta {
-  display: flex;
-  align-items: center;
-  gap: 22px;
-  margin-top: 12px;
-  color: #777870;
-  font-size: 11px;
-  font-weight: 300;
-  letter-spacing: 0.08em;
-}
-
-.long-review-meta span {
+.long-review-rating {
+  margin-top: 10px;
   color: #607b68;
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: 14px;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+}
+
+.long-review-date {
+  color: #777870;
+  font-size: 10px;
+  font-weight: 300;
+  letter-spacing: 0.08em;
+  text-align: center;
 }
 
 .long-review-editor {
@@ -1467,22 +1491,31 @@ html, body {
   }
 
   .long-review-record {
-    gap: 20px;
     padding: 0 6px 34px;
   }
 
+  .long-review-film {
+    align-items: flex-start;
+    gap: 22px;
+  }
+
   .long-review-poster {
-    width: 70px;
+    width: 106px;
   }
 
   .long-review-record h1 {
-    font-size: 20px;
+    font-size: 14px;
+    line-height: 1.65;
   }
 
-  .long-review-meta {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 6px;
+  .long-review-kicker {
+    margin-bottom: 9px;
+    font-size: 8px;
+  }
+
+  .long-review-rating {
+    margin-top: 8px;
+    font-size: 12px;
   }
 
   .long-review-editor {

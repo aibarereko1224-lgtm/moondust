@@ -5,3 +5,8 @@ export function getLocalDateString(date = new Date()) {
 
   return `${year}-${month}-${day}`
 }
+
+export function formatDisplayDate(value: string | null) {
+  if (!value) return '日期未记'
+  return value.slice(0, 10).replaceAll('-', '.')
+}

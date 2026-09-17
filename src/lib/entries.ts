@@ -68,3 +68,15 @@ export async function deleteEntry(entryId: number): Promise<void> {
 
   if (error) throw error
 }
+
+export async function deleteEntries(entryIds: number[]): Promise<void> {
+  if (!entryIds.length) return
+  const user = await requireCurrentUser()
+  const { error } = await supabase
+    .from('entries')
+    .delete()
+    .in('id', entryIds)
+    .eq('user_id', user.id)
+
+  if (error) throw error
+}

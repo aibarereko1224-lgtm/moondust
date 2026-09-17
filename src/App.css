@@ -898,6 +898,16 @@ html, body {
   color: var(--accent);
 }
 
+.library-action-btn.library-delete-selected {
+  border-color: rgba(255, 100, 100, 0.4);
+  color: rgba(255, 140, 140, 0.9);
+}
+
+.library-action-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
 .library-modal-body {
   padding: 20px;
   max-height: calc(88vh - 70px);
@@ -951,6 +961,28 @@ html, body {
 .library-record:hover {
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(255, 255, 255, 0.1);
+}
+
+.library-record.is-selected {
+  border-color: rgba(201, 168, 124, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(201, 168, 124, 0.28);
+}
+
+.library-selection-mark {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 3;
+  display: flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(201, 168, 124, 0.7);
+  border-radius: 50%;
+  color: #17140f;
+  background: rgba(238, 224, 204, 0.9);
+  font-size: 13px;
 }
 
 .library-record-list {
@@ -1676,6 +1708,11 @@ html, body {
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
+  }
+
+  .library-header-right {
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 
   .library-records-grid {

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AuthPanel } from './components/AuthPanel'
+import { LongReviewWritingSpace } from './components/LongReviewWritingSpace'
 import { MonthlyNotebook } from './components/MonthlyNotebook'
 import { ParticleCover } from './components/ParticleCover'
 import { SceneBackgrounds } from './components/SceneBackgrounds'
@@ -13,7 +14,7 @@ import type { MediaRecord, MediaType } from './types/media'
 import type { TmdbSearchResult } from './types/tmdb'
 import './App.css'
 
-type Modal = 'auth' | 'search' | 'review' | 'library' | 'notebook' | 'detail' | null
+type Modal = 'auth' | 'search' | 'review' | 'library' | 'notebook' | 'detail' | 'long-review' | null
 type ViewMode = 'grid' | 'list'
 
 interface RecordGroup {
@@ -228,6 +229,12 @@ function App() {
     setModal('notebook')
   }
 
+  const openLongReview = (record: MediaRecord) => {
+    setSelectedRecord(record)
+    setDataError(null)
+    setModal('long-review')
+  }
+
   return (
     <div className="legacy-app">
       <SceneBackgrounds scene={scene} />
@@ -259,8 +266,9 @@ function App() {
 
         <MonthlyNotebook active={modal === 'notebook'} entries={entries} initialMonth={notebookMonth} onClose={closeModal} onOpenRecord={(record) => { setSelectedRecord(record); setModal('detail') }} theme={scene} />
 
-        {selectedRecord && <div className={`detail-modal glass-panel ${modal === 'detail' ? 'active' : ''}`}><button className="modal-close-btn detail-close-btn" onClick={closeModal} type="button">×</button><div className="detail-modal-content"><div className="detail-poster-section">{selectedRecord.poster ? <img alt={selectedRecord.title} className="detail-poster-img" src={selectedRecord.poster} /> : <div className="detail-poster-img poster-placeholder">无封面</div>}</div><div className="detail-info-section"><h3 className="detail-title">{selectedRecord.title}</h3><p className="detail-meta">{selectedRecord.date ?? '未设置日期'} · {selectedRecord.type}</p><div className="detail-rating"><Stars rating={selectedRecord.rating} /></div><div className="detail-comment-section"><p className="detail-comment">{selectedRecord.review || '（暂无记录）'}</p></div>{dataError && <p className="data-status-error">{dataError}</p>}<div className="detail-actions"><button className="detail-action-btn" onClick={() => startEdit(selectedRecord)} type="button">编辑</button><button className="detail-action-btn" onClick={() => { setNotebookMonth(recordDate(selectedRecord).slice(0, 7)); setModal('notebook') }} type="button">月度笔记</button><button className="detail-action-btn delete" onClick={() => void removeSelected()} type="button">删除</button></div></div></div></div>}
+        {selectedRecord && <div className={`detail-modal glass-panel ${modal === 'detail' ? 'active' : ''}`}><button className="modal-close-btn detail-close-btn" onClick={closeModal} type="button">×</button><div className="detail-modal-content"><div className="detail-poster-section">{selectedRecord.poster ? <img alt={selectedRecord.title} className="detail-poster-img" src={selectedRecord.poster} /> : <div className="detail-poster-img poster-placeholder">无封面</div>}</div><div className="detail-info-section"><h3 className="detail-title">{selectedRecord.title}</h3><p className="detail-meta">{selectedRecord.date ?? '未设置日期'} · {selectedRecord.type}</p><div className="detail-rating"><Stars rating={selectedRecord.rating} /></div><div className="detail-comment-section"><p className="detail-comment">{selectedRecord.review || '（暂无记录）'}</p>{selectedRecord.type === 'movie' && <button className="long-review-entry" onClick={() => openLongReview(selectedRecord)} type="button">写一篇</button>}</div>{dataError && <p className="data-status-error">{dataError}</p>}<div className="detail-actions"><button className="detail-action-btn" onClick={() => startEdit(selectedRecord)} type="button">编辑</button><button className="detail-action-btn" onClick={() => { setNotebookMonth(recordDate(selectedRecord).slice(0, 7)); setModal('notebook') }} type="button">月度笔记</button><button className="detail-action-btn delete" onClick={() => void removeSelected()} type="button">删除</button></div></div></div></div>}
       </div>
+      <LongReviewWritingSpace active={modal === 'long-review'} onClose={() => setModal('detail')} record={selectedRecord} userId={auth.session?.user.id ?? null} />
     </div>
   )
 }

@@ -20,6 +20,10 @@ export type NotebookPage =
   | { kind: 'cover'; pageNumber: number; month: NotebookMonth }
   | { kind: 'records'; pageNumber: number; month: NotebookMonth; records: MediaRecord[] }
 
+export type NotebookReadingPage =
+  | { kind: 'intro'; pageNumber: number; month: NotebookMonth }
+  | { kind: 'story'; pageNumber: number; month: NotebookMonth; record: MediaRecord; lines: string[]; continuation: boolean }
+
 export type NotebookTheme = 'forest' | 'starry' | 'stream' | 'desert'
 export type NotebookMode = 'day' | 'night'
 export type NotebookFont = 'serif' | 'sans' | 'handwriting'

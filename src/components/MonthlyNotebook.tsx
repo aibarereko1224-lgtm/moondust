@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { MediaRecord } from '../types/media'
 import type { LongReviewMap } from '../types/longReview'
 import type { NotebookMode, NotebookTheme } from '../types/notebook'
-import { availableNotebookMonths, buildNotebookMonth, buildNotebookPages, shiftMonth } from '../lib/notebook'
+import { availableNotebookMonths, buildNotebookMonth, shiftMonth } from '../lib/notebook'
+import { buildNotebookReadingPages, type NotebookTextMetrics } from '../lib/notebookPagination'
 import { exportNotebookZip } from '../lib/notebookExport'
 import { NotebookPage } from './NotebookPage'
 
@@ -18,6 +19,7 @@ interface MonthlyNotebookProps {
 }
 
 export function MonthlyNotebook({ active, entries, initialMonth, theme, onClose, onOpenRecord, longReviews, longReviewRevision }: MonthlyNotebookProps) {
+  void longReviewRevision
   const [monthKey, setMonthKey] = useState(initialMonth)
   const [pageIndex, setPageIndex] = useState(0)
   const [selectedMonths, setSelectedMonths] = useState<Set<string>>(new Set([initialMonth]))
@@ -25,6 +27,8 @@ export function MonthlyNotebook({ active, entries, initialMonth, theme, onClose,
   const [exporting, setExporting] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
   const [mode, setMode] = useState<NotebookMode>(() => localStorage.getItem('moon-dust-notebook-mode') === 'night' ? 'night' : 'day')
+  const paperRef = useRef<HTMLElement>(null)
+  const [metrics, setMetrics] = useState<NotebookTextMetrics>({ width: 500, firstPageHeight: 330, continuationHeight: 570, font: '300 17px "Noto Sans SC", sans-serif', fontSize: 17, lineHeight: 34, letterSpacing: 0.425 })
 
   useEffect(() => {
     localStorage.setItem('moon-dust-notebook-mode', mode)
@@ -38,11 +42,46 @@ export function MonthlyNotebook({ active, entries, initialMonth, theme, onClose,
   }, [active, initialMonth])
 
   const month = useMemo(() => buildNotebookMonth(entries, monthKey), [entries, monthKey])
-  const pages = useMemo(() => buildNotebookPages(month), [month])
+  const pages = useMemo(() => buildNotebookReadingPages(month, longReviews, metrics), [longReviews, metrics, month])
   const availableMonths = useMemo(() => {
     const keys = availableNotebookMonths(entries)
     return keys.includes(monthKey) ? keys : [monthKey, ...keys]
   }, [entries, monthKey])
+
+  useLayoutEffect(() => {
+    if (!active || !paperRef.current) return
+    const paper = paperRef.current
+    const update = () => {
+      const sample = paper.querySelector<HTMLElement>('.notebook-text-measure')
+      if (!sample) return
+      const style = getComputedStyle(sample)
+      const fontSize = Number.parseFloat(style.fontSize)
+      const lineHeight = Number.parseFloat(style.lineHeight)
+      const next = {
+        width: paper.clientWidth * 0.83,
+        firstPageHeight: paper.clientHeight * 0.47,
+        continuationHeight: paper.clientHeight * 0.75,
+        font: `${style.fontWeight} ${fontSize}px ${style.fontFamily}`,
+        fontSize,
+        lineHeight,
+        letterSpacing: Number.parseFloat(style.letterSpacing) || 0,
+      }
+      setMetrics((current) => JSON.stringify(current) === JSON.stringify(next) ? current : next)
+    }
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(paper)
+    void document.fonts?.ready.then(update)
+    document.fonts?.addEventListener('loadingdone', update)
+    return () => {
+      observer.disconnect()
+      document.fonts?.removeEventListener('loadingdone', update)
+    }
+  }, [active, mode, monthKey, pageIndex])
+
+  useEffect(() => {
+    if (pageIndex >= pages.length) setPageIndex(Math.max(0, pages.length - 1))
+  }, [pageIndex, pages.length])
 
   const moveMonth = (amount: number) => {
     const next = shiftMonth(monthKey, amount)
@@ -102,15 +141,18 @@ export function MonthlyNotebook({ active, entries, initialMonth, theme, onClose,
         </div>
       )}
 
-      <div className="notebook-stage">
+      <div className="notebook-stage" data-notebook-mode={mode}>
         <div className="notebook-page-shell">
           <button aria-label="上一页" className="notebook-page-turn previous" disabled={pageIndex === 0} onClick={() => setPageIndex((value) => value - 1)} type="button">‹</button>
-          <NotebookPage longReviewRevision={longReviewRevision} longReviews={longReviews} mode={mode} page={pages[pageIndex]} theme={theme} onOpenRecord={onOpenRecord} />
+          <div className="notebook-book">
+            <NotebookPage key={`${monthKey}-${pageIndex}`} mode={mode} page={pages[Math.min(pageIndex, pages.length - 1)]} paperRef={paperRef} theme={theme} onOpenRecord={onOpenRecord} />
+          </div>
           <button aria-label="下一页" className="notebook-page-turn next" disabled={pageIndex === pages.length - 1} onClick={() => setPageIndex((value) => value + 1)} type="button">›</button>
         </div>
       </div>
 
       <div className="notebook-pagination" aria-label="笔记本页码">
+        <span>{Math.min(pageIndex + 1, pages.length)} / {pages.length}</span>
         {pages.map((page, index) => <button aria-label={`第 ${page.pageNumber} 页`} className={index === pageIndex ? 'active' : ''} key={page.pageNumber} onClick={() => setPageIndex(index)} type="button" />)}
       </div>
       {exportError && <p className="notebook-export-error">{exportError}</p>}

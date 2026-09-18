@@ -2244,6 +2244,47 @@ html, body {
   gap: clamp(12px, 2vw, 28px);
 }
 
+.notebook-book {
+  position: relative;
+  width: min(760px, calc(100cqw - var(--notebook-nav-space)), 72cqh);
+  max-width: 100%;
+  aspect-ratio: 3 / 4;
+  padding: clamp(5px, 0.75cqh, 10px) clamp(9px, 1.25cqh, 17px) clamp(10px, 1.35cqh, 18px) clamp(13px, 1.65cqh, 22px);
+  border-radius: 4px 21px 21px 4px;
+  background:
+    linear-gradient(90deg, #5a351d 0 2.4%, #81542f 3.1%, #674021 7%, #86582f 98%, #4d2e19 100%);
+  box-shadow: 0 26px 42px rgba(0, 0, 0, 0.34), 0 5px 10px rgba(0, 0, 0, 0.25);
+  isolation: isolate;
+}
+
+.notebook-book::before {
+  position: absolute;
+  z-index: 0;
+  top: 1.3%;
+  right: 1.5%;
+  bottom: 2.3%;
+  left: 3.2%;
+  border-radius: 2px 15px 15px 2px;
+  background:
+    repeating-linear-gradient(0deg, #ddd8cd 0 1px, #f2eee5 1px 3px),
+    #ece8df;
+  box-shadow: 5px 3px 7px rgba(0, 0, 0, 0.24);
+  content: '';
+}
+
+.notebook-book::after {
+  position: absolute;
+  z-index: 2;
+  top: 2%;
+  bottom: 3%;
+  left: 3.7%;
+  width: 9%;
+  background: linear-gradient(90deg, rgba(58, 45, 33, 0.13), rgba(255, 255, 255, 0.64) 32%, rgba(55, 43, 31, 0.1) 80%, transparent);
+  content: '';
+  opacity: 0.7;
+  pointer-events: none;
+}
+
 .notebook-paper {
   --notebook-paper: #eeeae2;
   --notebook-paper-light: #f4f0e8;
@@ -2251,15 +2292,14 @@ html, body {
   --notebook-muted: #777870;
   --notebook-accent: #607b68;
   --notebook-line: #b9b8ae;
-  --notebook-reading-font: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --notebook-reading-font: 'ZCOOL QingKe HuangYou', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --notebook-body-size: 17px;
   --notebook-body-leading: 2;
   --notebook-body-tracking: 0.025em;
   --notebook-reading-width: 720px;
   position: relative;
   flex: 0 0 auto;
-  width: min(900px, calc(100vw - 220px), 70vh);
-  width: min(900px, calc(100cqw - var(--notebook-nav-space)), 75cqh);
+  width: 100%;
   max-width: 100%;
   max-height: 100%;
   aspect-ratio: 3 / 4;
@@ -2621,6 +2661,220 @@ html, body {
   letter-spacing: 0.06em;
 }
 
+/* The library card always opens its detail view; long-form writing lives there. */
+.library-long-review-entry {
+  display: none;
+}
+
+/* Fixed, unruled reading paper. Pagination is calculated against these dimensions. */
+.notebook-paper {
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 82% 16%, color-mix(in srgb, var(--notebook-accent) 5%, transparent), transparent 34%),
+    linear-gradient(105deg, var(--notebook-paper), var(--notebook-paper-light) 52%, var(--notebook-paper));
+  border-radius: 1px 13px 13px 1px;
+  animation: notebook-page-arrive 420ms cubic-bezier(0.22, 0.7, 0.25, 1) both;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.3), 10px 8px 0 -6px color-mix(in srgb, var(--notebook-paper) 88%, #000), 16px 12px 0 -10px color-mix(in srgb, var(--notebook-paper) 76%, #000);
+}
+
+@keyframes notebook-page-arrive {
+  from { opacity: 0.72; transform: perspective(1200px) rotateY(-2.5deg) translateX(8px); }
+  to { opacity: 1; transform: perspective(1200px) rotateY(0) translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notebook-paper { animation: none; }
+}
+
+.notebook-paper[data-notebook-page="story"] {
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.notebook-paper::after {
+  border-color: color-mix(in srgb, var(--notebook-accent) 17%, transparent);
+  border-radius: 1px 10px 10px 1px;
+}
+
+.notebook-intro-page,
+.notebook-story-page {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.notebook-intro-page {
+  display: flex;
+  flex-direction: column;
+  padding: 8% 1% 5%;
+}
+
+.notebook-intro-title span {
+  display: block;
+  font-family: var(--notebook-reading-font);
+  font-size: clamp(22px, 3vw, 38px);
+  font-weight: 300;
+  letter-spacing: 0.035em;
+}
+
+.notebook-intro-title small {
+  display: block;
+  margin-top: 1.5%;
+  color: var(--notebook-muted);
+  font-family: var(--font-display);
+  font-size: clamp(8px, 0.8vw, 11px);
+  letter-spacing: 0.18em;
+}
+
+.notebook-calendar {
+  margin-top: 7%;
+  padding: 6% 5%;
+  border: 1px solid color-mix(in srgb, var(--notebook-accent) 18%, transparent);
+  background: color-mix(in srgb, var(--notebook-paper-light) 68%, transparent);
+}
+
+.notebook-calendar-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 5%;
+}
+
+.notebook-calendar-heading strong {
+  font-family: var(--font-display);
+  font-size: clamp(10px, 1.15vw, 15px);
+  font-weight: 400;
+  letter-spacing: 0.22em;
+}
+
+.notebook-calendar-heading span {
+  color: var(--notebook-muted);
+  font-size: clamp(9px, 0.9vw, 12px);
+  letter-spacing: 0.12em;
+}
+
+.notebook-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+}
+
+.notebook-calendar-weekdays {
+  margin-bottom: 3%;
+  color: var(--notebook-muted);
+  font-family: var(--font-display);
+  font-size: clamp(5px, 0.6vw, 8px);
+  letter-spacing: 0.06em;
+}
+
+.notebook-calendar-days {
+  row-gap: clamp(5px, 1cqh, 12px);
+  font-family: var(--notebook-reading-font);
+  font-size: clamp(9px, 1vw, 13px);
+}
+
+.notebook-calendar-days > span {
+  position: relative;
+  min-height: 1.8em;
+}
+
+.notebook-calendar-days i {
+  position: absolute;
+  right: 10%;
+  bottom: -0.42em;
+  color: var(--notebook-accent);
+  font-size: 0.9em;
+  font-style: normal;
+  transform: rotate(-18deg);
+}
+
+.notebook-month-summary {
+  display: flex;
+  gap: 9%;
+  margin-top: 7%;
+  color: var(--notebook-muted);
+  font-size: clamp(9px, 1vw, 13px);
+  letter-spacing: 0.05em;
+}
+
+.notebook-month-summary p { margin: 0; }
+.notebook-month-summary strong { color: var(--notebook-accent); font-weight: 400; }
+
+.notebook-intro-mark {
+  margin-top: auto;
+  color: color-mix(in srgb, var(--notebook-accent) 32%, transparent);
+  font-family: var(--font-display);
+  font-size: clamp(8px, 0.8vw, 11px);
+  letter-spacing: 0.3em;
+  text-align: center;
+}
+
+.notebook-story-page {
+  padding: 7% 0 5%;
+}
+
+.notebook-story-page.is-continuation { padding-top: 5%; }
+
+.notebook-story-heading {
+  display: grid;
+  width: 100%;
+  height: 27%;
+  min-height: 0;
+  grid-template-columns: 20% 1fr;
+  gap: 5%;
+  padding: 0 0 4.5%;
+  overflow: hidden;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--notebook-accent) 16%, transparent);
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notebook-story-poster-wrap { min-height: 0; overflow: hidden; }
+.notebook-story-poster { width: 100%; height: 100%; object-fit: cover; }
+.notebook-story-meta h3 { margin: 3% 0 9%; font-family: var(--notebook-reading-font); font-size: clamp(14px, 1.6vw, 22px); font-weight: 300; line-height: 1.55; }
+.notebook-story-meta > span { display: flex; align-items: center; gap: 7%; color: var(--notebook-muted); font-size: clamp(8px, 0.85vw, 12px); }
+.notebook-continuation-title { height: 7%; color: var(--notebook-muted); font-size: clamp(9px, 0.9vw, 12px); letter-spacing: 0.06em; }
+
+.notebook-story-copy,
+.notebook-text-measure {
+  font-family: var(--notebook-reading-font);
+  font-size: clamp(11px, 1.22vw, var(--notebook-body-size));
+  font-weight: 300;
+  line-height: var(--notebook-body-leading);
+  letter-spacing: var(--notebook-body-tracking);
+}
+
+.notebook-story-copy {
+  padding-top: 4%;
+  overflow: hidden;
+}
+
+.notebook-story-copy > span { display: block; height: 2em; white-space: pre; }
+.notebook-story-copy .paragraph-space { height: 2em; }
+.notebook-text-measure { position: absolute; visibility: hidden; pointer-events: none; }
+
+.notebook-pagination {
+  align-items: center;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.notebook-pagination > span {
+  margin-right: 6px;
+  color: rgba(255, 255, 255, 0.48);
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
 @media (max-width: 768px) {
   .notebook-panel {
     inset: 0;
@@ -2659,7 +2913,7 @@ html, body {
     max-width: 100%;
   }
 
-  .notebook-stage {
+.notebook-stage {
     --notebook-nav-space: 80px;
     padding: 14px 10px 10px;
   }
@@ -2674,6 +2928,12 @@ html, body {
     height: 48px;
     font-size: 25px;
   }
+}
+
+.notebook-stage[data-notebook-mode="day"] {
+  background:
+    radial-gradient(ellipse at 50% 56%, rgba(255, 255, 255, 0.5), transparent 48%),
+    #c9cac4;
 }
 
 @media (max-width: 480px) {

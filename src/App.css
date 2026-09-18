@@ -1244,6 +1244,18 @@ html, body {
   color: rgba(255, 255, 255, 0.9);
 }
 
+.detail-long-review-btn {
+  border-color: rgba(201, 168, 124, 0.62);
+  color: #e0ba83;
+  background: rgba(201, 168, 124, 0.1);
+}
+
+.detail-long-review-btn:hover {
+  border-color: #e0ba83;
+  color: #fff1d8;
+  background: rgba(201, 168, 124, 0.2);
+}
+
 .detail-action-btn.delete {
   border-color: rgba(255, 100, 100, 0.3);
   color: rgba(255, 100, 100, 0.7);
@@ -1274,6 +1286,18 @@ html, body {
 .long-review-entry:hover {
   border-color: rgba(201, 168, 124, 0.68);
   color: var(--accent);
+}
+
+.detail-comment-section .long-review-entry {
+  position: relative;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 7px 12px;
+  border: 1px solid rgba(201, 168, 124, 0.42);
+  border-radius: 6px;
+  background: rgba(201, 168, 124, 0.08);
 }
 
 /* Long Review Writing Space */
@@ -2292,7 +2316,7 @@ html, body {
   --notebook-muted: #777870;
   --notebook-accent: #607b68;
   --notebook-line: #b9b8ae;
-  --notebook-reading-font: 'ZCOOL QingKe HuangYou', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --notebook-reading-font: 'LXGW WenKai', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --notebook-body-size: 17px;
   --notebook-body-leading: 2;
   --notebook-body-tracking: 0.025em;

@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { MediaRecord } from '../types/media'
 import type { LongReviewMap } from '../types/longReview'
-import type { NotebookMode, NotebookTheme } from '../types/notebook'
+import type { NotebookMode, NotebookReadingPage, NotebookTheme } from '../types/notebook'
 import { availableNotebookMonths, buildNotebookMonth, shiftMonth } from '../lib/notebook'
 import { buildNotebookReadingPages, type NotebookTextMetrics } from '../lib/notebookPagination'
 import { exportNotebookZip } from '../lib/notebookExport'
@@ -22,12 +22,15 @@ export function MonthlyNotebook({ active, entries, initialMonth, theme, onClose,
   void longReviewRevision
   const [monthKey, setMonthKey] = useState(initialMonth)
   const [pageIndex, setPageIndex] = useState(0)
+  const [turningPage, setTurningPage] = useState<{ page: NotebookReadingPage; direction: 'next' | 'previous'; id: number } | null>(null)
   const [selectedMonths, setSelectedMonths] = useState<Set<string>>(new Set([initialMonth]))
   const [showBatch, setShowBatch] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
   const [mode, setMode] = useState<NotebookMode>(() => localStorage.getItem('moon-dust-notebook-mode') === 'night' ? 'night' : 'day')
   const paperRef = useRef<HTMLElement>(null)
+  const turningPaperRef = useRef<HTMLElement>(null)
+  const turnTimerRef = useRef<number | null>(null)
   const [metrics, setMetrics] = useState<NotebookTextMetrics>({ width: 500, firstPageHeight: 330, continuationHeight: 570, font: '300 17px "Noto Sans SC", sans-serif', fontSize: 17, lineHeight: 34, letterSpacing: 0.425 })
 
   useEffect(() => {
@@ -40,6 +43,8 @@ export function MonthlyNotebook({ active, entries, initialMonth, theme, onClose,
     setPageIndex(0)
     setSelectedMonths(new Set([initialMonth]))
   }, [active, initialMonth])
+
+  useEffect(() => () => { if (turnTimerRef.current) window.clearTimeout(turnTimerRef.current) }, [])
 
   const month = useMemo(() => buildNotebookMonth(entries, monthKey), [entries, monthKey])
   const pages = useMemo(() => buildNotebookReadingPages(month, longReviews, metrics), [longReviews, metrics, month])
@@ -88,6 +93,15 @@ export function MonthlyNotebook({ active, entries, initialMonth, theme, onClose,
     setMonthKey(next)
     setPageIndex(0)
     setSelectedMonths(new Set([next]))
+  }
+
+  const turnTo = (nextIndex: number) => {
+    if (nextIndex === pageIndex || nextIndex < 0 || nextIndex >= pages.length) return
+    const direction = nextIndex > pageIndex ? 'next' : 'previous'
+    if (turnTimerRef.current) window.clearTimeout(turnTimerRef.current)
+    setTurningPage({ page: pages[pageIndex], direction, id: Date.now() })
+    setPageIndex(nextIndex)
+    turnTimerRef.current = window.setTimeout(() => setTurningPage(null), 680)
   }
 
   const toggleMonth = (key: string) => {
@@ -143,17 +157,18 @@ export function MonthlyNotebook({ active, entries, initialMonth, theme, onClose,
 
       <div className="notebook-stage" data-notebook-mode={mode}>
         <div className="notebook-page-shell">
-          <button aria-label="上一页" className="notebook-page-turn previous" disabled={pageIndex === 0} onClick={() => setPageIndex((value) => value - 1)} type="button">‹</button>
+          <button aria-label="上一页" className="notebook-page-turn previous" disabled={pageIndex === 0} onClick={() => turnTo(pageIndex - 1)} type="button">‹</button>
           <div className="notebook-book">
-            <NotebookPage key={`${monthKey}-${pageIndex}`} mode={mode} page={pages[Math.min(pageIndex, pages.length - 1)]} paperRef={paperRef} theme={theme} onOpenRecord={onOpenRecord} />
+            <NotebookPage mode={mode} page={pages[Math.min(pageIndex, pages.length - 1)]} paperRef={paperRef} theme={theme} onOpenRecord={onOpenRecord} />
+            {turningPage && <div className={`notebook-turning-sheet notebook-turning-${turningPage.direction}`} key={turningPage.id}><NotebookPage mode={mode} page={turningPage.page} paperRef={turningPaperRef} theme={theme} onOpenRecord={onOpenRecord} /></div>}
           </div>
-          <button aria-label="下一页" className="notebook-page-turn next" disabled={pageIndex === pages.length - 1} onClick={() => setPageIndex((value) => value + 1)} type="button">›</button>
+          <button aria-label="下一页" className="notebook-page-turn next" disabled={pageIndex === pages.length - 1} onClick={() => turnTo(pageIndex + 1)} type="button">›</button>
         </div>
       </div>
 
       <div className="notebook-pagination" aria-label="笔记本页码">
         <span>{Math.min(pageIndex + 1, pages.length)} / {pages.length}</span>
-        {pages.map((page, index) => <button aria-label={`第 ${page.pageNumber} 页`} className={index === pageIndex ? 'active' : ''} key={page.pageNumber} onClick={() => setPageIndex(index)} type="button" />)}
+        {pages.map((page, index) => <button aria-label={`第 ${page.pageNumber} 页`} className={index === pageIndex ? 'active' : ''} key={page.pageNumber} onClick={() => turnTo(index)} type="button" />)}
       </div>
       {exportError && <p className="notebook-export-error">{exportError}</p>}
     </section>

@@ -19,17 +19,27 @@ function MonthIntro({ page }: { page: Extract<NotebookReadingPage, { kind: 'intr
     <div className="notebook-intro-title"><span>My {prettyMonth}</span><small>MONTH — {month.monthName}</small></div>
     <div className="notebook-calendar"><div className="notebook-calendar-heading"><strong>{month.monthName}</strong><span>{month.year}</span></div>
       <div className="notebook-calendar-grid notebook-calendar-weekdays">{['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map((day) => <span key={day}>{day}</span>)}</div>
-      <div className="notebook-calendar-grid notebook-calendar-days">{Array.from({ length: leading }, (_, index) => <span key={`empty-${index}`} />)}{Array.from({ length: days }, (_, index) => <span className={recordedDays.has(index + 1) ? 'is-recorded' : ''} key={index + 1}>{index + 1}{recordedDays.has(index + 1) && <i aria-label="这一天有记录">☾</i>}</span>)}</div>
+      <div className="notebook-calendar-grid notebook-calendar-days">{Array.from({ length: leading }, (_, index) => <span key={`empty-${index}`} />)}{Array.from({ length: days }, (_, index) => <span className={recordedDays.has(index + 1) ? 'is-recorded' : ''} key={index + 1}>{index + 1}</span>)}</div>
     </div>
+    <div className="notebook-month-stamp" aria-label="本月记录印章">☾</div>
     <div className="notebook-month-summary"><p>这个月记录了 <strong>{recordedDays.size}</strong> 天</p><p>留下了 <strong>{month.stats.total}</strong> 个故事</p></div><div className="notebook-intro-mark">MOON DUST</div>
   </div>
+}
+
+function CoverPage({ page }: { page: Extract<NotebookReadingPage, { kind: 'cover' }> }) {
+  return <div className="notebook-cover-page"><span className="notebook-cover-wordmark">Moon Dust</span><span className="notebook-cover-month">{page.month.monthName.slice(0, 1) + page.month.monthName.slice(1).toLowerCase()} {page.month.year}</span></div>
+}
+
+function GalleryPage({ page, onOpenRecord }: { page: Extract<NotebookReadingPage, { kind: 'gallery' }>; onOpenRecord: (record: MediaRecord) => void }) {
+  const columns = Math.min(7, Math.max(3, Math.ceil(Math.sqrt(page.records.length * 1.6))))
+  return <div className="notebook-gallery-page"><header><span>本月看过的电影</span><small>{page.month.monthName} · {page.records.length} stories</small></header>{page.records.length ? <div className="notebook-gallery-grid" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>{page.records.map((record, index) => <button className={`notebook-gallery-item gallery-item-${index % 4}`} key={record.id} onClick={() => onOpenRecord(record)} type="button">{record.poster ? <img alt={record.title} src={record.poster} /> : <span>NO IMAGE</span>}<strong>《{record.title}》</strong></button>)}</div> : <p className="notebook-gallery-empty">这个月还没有留下电影。</p>}</div>
 }
 
 export function NotebookPage({ page, theme, mode, onOpenRecord, paperRef }: NotebookPageProps) {
   const { month } = page
   return <article className="notebook-paper" data-notebook-mode={mode} data-notebook-page={page.kind} data-notebook-theme={theme} ref={paperRef}>
-    <div className="notebook-binding" aria-hidden="true" /><header className="notebook-paper-header"><span>MOON DUST · MONTHLY NOTEBOOK</span><span>{month.year} / {String(month.month).padStart(2, '0')}</span></header>
-    {page.kind === 'intro' ? <MonthIntro page={page} /> : <div className={`notebook-story-page ${page.continuation ? 'is-continuation' : ''}`}>
+    <header className="notebook-paper-header"><span>MOON DUST · MONTHLY NOTEBOOK</span><span>{month.year} / {String(month.month).padStart(2, '0')}</span></header>
+    {page.kind === 'cover' ? <CoverPage page={page} /> : page.kind === 'intro' ? <MonthIntro page={page} /> : page.kind === 'gallery' ? <GalleryPage onOpenRecord={onOpenRecord} page={page} /> : <div className={`notebook-story-page ${page.continuation ? 'is-continuation' : ''}`}>
       {!page.continuation && <button className="notebook-story-heading" onClick={() => onOpenRecord(page.record)} type="button"><span className="notebook-story-poster-wrap">{page.record.poster ? <img alt="" className="notebook-story-poster" src={page.record.poster} /> : <span className="notebook-story-poster notebook-poster-empty">NO IMAGE</span>}</span><span className="notebook-story-meta"><h3>《{page.record.title}》</h3><span><Rating value={page.record.rating} /><time dateTime={page.record.date ?? undefined}>{formatDisplayDate(page.record.date)}</time></span></span></button>}
       {page.continuation && <div className="notebook-continuation-title">《{page.record.title}》 · 续</div>}<div className="notebook-story-copy">{page.lines.map((line, index) => line ? <span key={index}>{line}</span> : <span className="paragraph-space" key={index}>&nbsp;</span>)}</div>
     </div>}

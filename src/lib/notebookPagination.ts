@@ -55,7 +55,9 @@ function takePage(lines: string[], start: number, height: number, lineHeight: nu
 }
 
 export function buildNotebookReadingPages(month: NotebookMonth, reviews: LongReviewMap, metrics: NotebookTextMetrics): NotebookReadingPage[] {
-  const pages: NotebookReadingPage[] = [{ kind: 'intro', pageNumber: 1, month }]
+  const pages: NotebookReadingPage[] = [{ kind: 'cover', pageNumber: 1, month }, { kind: 'intro', pageNumber: 2, month }]
+  const movies = month.records.filter((record) => record.type === 'movie')
+  pages.push({ kind: 'gallery', pageNumber: 3, month, records: movies })
   month.records.forEach((record: MediaRecord) => {
     const text = normalizeReview(reviews[record.id]?.body || record.review || '')
     const allLines = text ? layoutReviewLines(text, metrics) : ['（这一天没有留下文字。）']

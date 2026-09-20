@@ -3,7 +3,7 @@ import { type NotebookMode, type NotebookReadingPage, type NotebookTheme } from 
 import type { MediaRecord } from '../types/media'
 import { formatDisplayDate } from '../lib/date'
 
-interface NotebookPageProps { page: NotebookReadingPage; theme: NotebookTheme; mode: NotebookMode; onOpenRecord: (record: MediaRecord) => void; paperRef: RefObject<HTMLElement | null> }
+interface NotebookPageProps { page: NotebookReadingPage; theme: NotebookTheme; mode: NotebookMode; onOpenRecord: (record: MediaRecord) => void; paperRef?: RefObject<HTMLElement | null> }
 
 function Rating({ value }: { value: number | null }) {
   return <span className="notebook-rating" aria-label={value ? `${value} 星` : '未评分'}>{Array.from({ length: 5 }, (_, index) => <span className={value && index < value ? 'is-filled' : ''} key={index}>☆</span>)}</span>
@@ -21,6 +21,7 @@ function MonthIntro({ page }: { page: Extract<NotebookReadingPage, { kind: 'intr
       <div className="notebook-calendar-grid notebook-calendar-weekdays">{['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map((day) => <span key={day}>{day}</span>)}</div>
       <div className="notebook-calendar-grid notebook-calendar-days">{Array.from({ length: leading }, (_, index) => <span key={`empty-${index}`} />)}{Array.from({ length: days }, (_, index) => <span className={recordedDays.has(index + 1) ? 'is-recorded' : ''} key={index + 1}>{index + 1}{recordedDays.has(index + 1) && <i aria-label="这一天有记录">☾</i>}</span>)}</div>
     </div>
+    <div aria-label="月相印章" className="notebook-moon-stamp"><span>◐</span></div>
     <div className="notebook-month-summary"><p>这个月记录了 <strong>{recordedDays.size}</strong> 天</p><p>留下了 <strong>{month.stats.total}</strong> 个故事</p></div><div className="notebook-intro-mark">MOON DUST</div>
   </div>
 }

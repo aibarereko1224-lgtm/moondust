@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import type { MediaRecord } from '../types/media'
 import type { LongReviewMap } from '../types/longReview'
 import type { NotebookMode, NotebookReadingPage, NotebookTheme } from '../types/notebook'
@@ -18,6 +18,37 @@ interface MonthlyNotebookProps {
   longReviewRevision: number
 }
 
+const PAGE_CURL_SEGMENTS = 9
+
+function SoftPageTurn({ direction, mode, page, theme, onOpenRecord }: { direction: 'next' | 'previous'; mode: NotebookMode; page: NotebookReadingPage; theme: NotebookTheme; onOpenRecord: (record: MediaRecord) => void }) {
+  return <div aria-hidden="true" className={`notebook-page-curl notebook-page-curl-${direction}`} inert>
+    <span className="notebook-curl-cast-shadow" />
+    {Array.from({ length: PAGE_CURL_SEGMENTS }, (_, index) => {
+      const order = direction === 'next' ? PAGE_CURL_SEGMENTS - 1 - index : index
+      const settle = direction === 'next' ? -(2 * index + 1) * 100 : (2 * (PAGE_CURL_SEGMENTS - 1 - index)) * 100
+      const style = {
+        '--curl-index': index,
+        '--curl-order': order,
+        '--curl-left': `${(index / PAGE_CURL_SEGMENTS) * 100}%`,
+        '--curl-delay': `${order * 18}ms`,
+        '--curl-depth-in': `${(order + 1) * 1.5}px`,
+        '--curl-depth-out': `${(PAGE_CURL_SEGMENTS - order) * 2}px`,
+        '--curl-mid': `${settle * 0.42}%`,
+        '--curl-settle': `${settle}%`,
+      } as CSSProperties
+      return <span className="notebook-curl-segment" key={index} style={style}>
+        <span className="notebook-curl-face">
+          <span className="notebook-curl-page" style={{ left: `${-index * 100}%`, width: `${PAGE_CURL_SEGMENTS * 100}%` }}>
+            <NotebookPage mode={mode} page={page} theme={theme} onOpenRecord={onOpenRecord} />
+          </span>
+          <span className="notebook-curl-light" />
+        </span>
+        <span className="notebook-curl-back" />
+      </span>
+    })}
+  </div>
+}
+
 export function MonthlyNotebook({ active, entries, initialMonth, theme, onClose, onOpenRecord, longReviews, longReviewRevision }: MonthlyNotebookProps) {
   void longReviewRevision
   const [monthKey, setMonthKey] = useState(initialMonth)
@@ -29,7 +60,6 @@ export function MonthlyNotebook({ active, entries, initialMonth, theme, onClose,
   const [exportError, setExportError] = useState<string | null>(null)
   const [mode, setMode] = useState<NotebookMode>(() => localStorage.getItem('moon-dust-notebook-mode') === 'night' ? 'night' : 'day')
   const paperRef = useRef<HTMLElement>(null)
-  const turningPaperRef = useRef<HTMLElement>(null)
   const turnTimerRef = useRef<number | null>(null)
   const [metrics, setMetrics] = useState<NotebookTextMetrics>({ width: 500, firstPageHeight: 330, continuationHeight: 570, font: '300 17px "Noto Sans SC", sans-serif', fontSize: 17, lineHeight: 34, letterSpacing: 0.425 })
 
@@ -96,12 +126,12 @@ export function MonthlyNotebook({ active, entries, initialMonth, theme, onClose,
   }
 
   const turnTo = (nextIndex: number) => {
-    if (nextIndex === pageIndex || nextIndex < 0 || nextIndex >= pages.length) return
+    if (turningPage || nextIndex === pageIndex || nextIndex < 0 || nextIndex >= pages.length) return
     const direction = nextIndex > pageIndex ? 'next' : 'previous'
     if (turnTimerRef.current) window.clearTimeout(turnTimerRef.current)
     setTurningPage({ page: pages[pageIndex], direction, id: Date.now() })
     setPageIndex(nextIndex)
-    turnTimerRef.current = window.setTimeout(() => setTurningPage(null), 680)
+    turnTimerRef.current = window.setTimeout(() => setTurningPage(null), 920)
   }
 
   const toggleMonth = (key: string) => {
@@ -160,7 +190,7 @@ export function MonthlyNotebook({ active, entries, initialMonth, theme, onClose,
           <button aria-label="上一页" className="notebook-page-turn previous" disabled={pageIndex === 0} onClick={() => turnTo(pageIndex - 1)} type="button">‹</button>
           <div className="notebook-book">
             <NotebookPage mode={mode} page={pages[Math.min(pageIndex, pages.length - 1)]} paperRef={paperRef} theme={theme} onOpenRecord={onOpenRecord} />
-            {turningPage && <div className={`notebook-turning-sheet notebook-turning-${turningPage.direction}`} key={turningPage.id}><NotebookPage mode={mode} page={turningPage.page} paperRef={turningPaperRef} theme={theme} onOpenRecord={onOpenRecord} /></div>}
+            {turningPage && <SoftPageTurn direction={turningPage.direction} key={turningPage.id} mode={mode} page={turningPage.page} theme={theme} onOpenRecord={onOpenRecord} />}
           </div>
           <button aria-label="下一页" className="notebook-page-turn next" disabled={pageIndex === pages.length - 1} onClick={() => turnTo(pageIndex + 1)} type="button">›</button>
         </div>

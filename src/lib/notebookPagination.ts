@@ -48,7 +48,9 @@ export function layoutReviewLines(text: string, metrics: NotebookTextMetrics) {
 }
 
 function takePage(lines: string[], start: number, height: number, lineHeight: number) {
-  const capacity = Math.max(1, Math.floor(height / lineHeight))
+  const safeLineHeight = Number.isFinite(lineHeight) && lineHeight > 0 ? lineHeight : 34
+  const safeHeight = Number.isFinite(height) && height > 0 ? height : safeLineHeight
+  const capacity = Math.max(1, Math.floor(safeHeight / safeLineHeight))
   let end = Math.min(lines.length, start + capacity)
   while (end > start + 1 && lines[end - 1] === '') end -= 1
   return { lines: lines.slice(start, end), next: Math.max(end, start + 1) }
@@ -59,7 +61,8 @@ export function buildNotebookReadingPages(month: NotebookMonth, reviews: LongRev
   const movies = month.records.filter((record) => record.type === 'movie')
   pages.push({ kind: 'gallery', pageNumber: 3, month, records: movies })
   month.records.forEach((record: MediaRecord) => {
-    const text = normalizeReview(reviews[record.id]?.body || record.review || '')
+    const longReview = normalizeReview(reviews[record.id]?.body ?? '')
+    const text = longReview || normalizeReview(record.review || '')
     const allLines = text ? layoutReviewLines(text, metrics) : ['（这一天没有留下文字。）']
     let cursor = 0
     let continuation = false

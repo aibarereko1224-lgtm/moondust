@@ -19,15 +19,14 @@ function MonthIntro({ page }: { page: Extract<NotebookReadingPage, { kind: 'intr
     <div className="notebook-intro-title"><span>My {prettyMonth}</span><small>MONTH — {month.monthName}</small></div>
     <div className="notebook-calendar"><div className="notebook-calendar-heading"><strong>{month.monthName}</strong><span>{month.year}</span></div>
       <div className="notebook-calendar-grid notebook-calendar-weekdays">{['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map((day) => <span key={day}>{day}</span>)}</div>
-      <div className="notebook-calendar-grid notebook-calendar-days">{Array.from({ length: leading }, (_, index) => <span key={`empty-${index}`} />)}{Array.from({ length: days }, (_, index) => <span className={recordedDays.has(index + 1) ? 'is-recorded' : ''} key={index + 1}>{index + 1}</span>)}</div>
+      <div className="notebook-calendar-grid notebook-calendar-days">{Array.from({ length: leading }, (_, index) => <span key={`empty-${index}`} />)}{Array.from({ length: days }, (_, index) => <span className={recordedDays.has(index + 1) ? 'is-recorded' : ''} key={index + 1}>{index + 1}{recordedDays.has(index + 1) && <i aria-label="这一天有记录">☾</i>}</span>)}</div>
     </div>
-    <div className="notebook-month-stamp" aria-label="本月记录印章">☾</div>
     <div className="notebook-month-summary"><p>这个月记录了 <strong>{recordedDays.size}</strong> 天</p><p>留下了 <strong>{month.stats.total}</strong> 个故事</p></div><div className="notebook-intro-mark">MOON DUST</div>
   </div>
 }
 
 function CoverPage({ page }: { page: Extract<NotebookReadingPage, { kind: 'cover' }> }) {
-  return <div className="notebook-cover-page"><span className="notebook-cover-wordmark">Moon Dust</span><span className="notebook-cover-month">{page.month.monthName.slice(0, 1) + page.month.monthName.slice(1).toLowerCase()} {page.month.year}</span></div>
+  return <div className="notebook-cover-page"><span className="notebook-cover-wordmark">MOON DUST</span><span className="notebook-cover-month">{page.month.monthName.slice(0, 1) + page.month.monthName.slice(1).toLowerCase()} {page.month.year}</span><p>记录你靠近的宇宙。</p></div>
 }
 
 function GalleryPage({ page, onOpenRecord }: { page: Extract<NotebookReadingPage, { kind: 'gallery' }>; onOpenRecord: (record: MediaRecord) => void }) {

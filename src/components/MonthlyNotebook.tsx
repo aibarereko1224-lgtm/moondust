@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { PageFlip } from 'page-flip/dist/js/page-flip.module.js'
 import type { MediaRecord } from '../types/media'
 import type { LongReviewMap } from '../types/longReview'
@@ -19,7 +19,7 @@ interface MonthlyNotebookProps {
   longReviewRevision: number
 }
 
-const NotebookFlipBook = memo(function NotebookFlipBook({ getCurrentPage, mode, onFlip, onFlipState, onOpenRecord, pages, paperRef, setInstance, theme }: { getCurrentPage: () => number; mode: NotebookMode; onFlip: (page: number) => void; onFlipState: (flipping: boolean) => void; onOpenRecord: (record: MediaRecord) => void; pages: NotebookReadingPage[]; paperRef: RefObject<HTMLElement | null>; setInstance: (instance: PageFlip | null) => void; theme: NotebookTheme }) {
+const NotebookFlipBook = memo(function NotebookFlipBook({ getCurrentPage, mode, onFlip, onFlipState, onMetrics, onOpenRecord, pages, setInstance, theme }: { getCurrentPage: () => number; mode: NotebookMode; onFlip: (page: number) => void; onFlipState: (flipping: boolean) => void; onMetrics: (metrics: NotebookTextMetrics) => void; onOpenRecord: (record: MediaRecord) => void; pages: NotebookReadingPage[]; setInstance: (instance: PageFlip | null) => void; theme: NotebookTheme }) {
   const rootRef = useRef<HTMLDivElement>(null)
   const flipRef = useRef<PageFlip | null>(null)
 
@@ -37,11 +37,11 @@ const NotebookFlipBook = memo(function NotebookFlipBook({ getCurrentPage, mode, 
       minHeight: 280,
       maxHeight: 1013,
       drawShadow: true,
-      flippingTime: 920,
+      flippingTime: 680,
       usePortrait: true,
       startPage: Math.min(getCurrentPage(), Math.max(0, elements.length - 1)),
       autoSize: false,
-      maxShadowOpacity: 0.24,
+      maxShadowOpacity: 0.18,
       showCover: false,
       mobileScrollSupport: true,
       clickEventForward: true,
@@ -55,7 +55,38 @@ const NotebookFlipBook = memo(function NotebookFlipBook({ getCurrentPage, mode, 
     flip.loadFromHTML(elements)
     flipRef.current = flip
     setInstance(flip)
+    const measure = () => {
+      const paper = root.querySelector<HTMLElement>('.notebook-paper')
+      const sample = root.querySelector<HTMLElement>('.notebook-text-measure')
+      const firstCopy = root.querySelector<HTMLElement>('.notebook-story-page:not(.is-continuation) .notebook-story-copy')
+      const continuationCopy = root.querySelector<HTMLElement>('.notebook-story-page.is-continuation .notebook-story-copy')
+      if (!paper || !sample) return
+      const style = getComputedStyle(sample)
+      const fontSize = Number.parseFloat(style.fontSize) || 17
+      const lineHeight = Number.parseFloat(style.lineHeight) || fontSize * 2
+      const letterSpacing = Number.parseFloat(style.letterSpacing) || 0
+      const width = firstCopy?.clientWidth || paper.clientWidth * 0.83
+      const firstPageHeight = firstCopy?.clientHeight || paper.clientHeight * 0.47
+      const continuationHeight = continuationCopy?.clientHeight || paper.clientHeight * 0.75
+      onMetrics({
+        width: Math.max(1, Math.floor(width - Math.max(8, fontSize * 0.65))),
+        firstPageHeight: Math.max(lineHeight, Math.floor(firstPageHeight - lineHeight * 0.8)),
+        continuationHeight: Math.max(lineHeight, Math.floor(continuationHeight - lineHeight * 0.8)),
+        font: `${style.fontWeight} ${fontSize}px ${style.fontFamily}`,
+        fontSize,
+        lineHeight,
+        letterSpacing,
+      })
+    }
+    const frame = requestAnimationFrame(measure)
+    const observer = new ResizeObserver(measure)
+    observer.observe(root)
+    void document.fonts?.ready.then(measure)
+    document.fonts?.addEventListener('loadingdone', measure)
     return () => {
+      cancelAnimationFrame(frame)
+      observer.disconnect()
+      document.fonts?.removeEventListener('loadingdone', measure)
       flipRef.current = null
       setInstance(null)
       flip.clear()
@@ -63,11 +94,11 @@ const NotebookFlipBook = memo(function NotebookFlipBook({ getCurrentPage, mode, 
       root.classList.remove('stf__parent')
       root.removeAttribute('style')
     }
-  }, [getCurrentPage, onFlip, onFlipState, setInstance])
+  }, [getCurrentPage, onFlip, onFlipState, onMetrics, setInstance])
 
   return <div className="notebook-flipbook-frame"><div className="notebook-flipbook" ref={rootRef}>
-      {pages.map((page, index) => <div className="notebook-flip-page" data-density="soft" key={`${page.pageNumber}-${page.kind}`}>
-        <NotebookPage mode={mode} onOpenRecord={onOpenRecord} page={page} paperRef={index === 0 ? paperRef : undefined} theme={theme} />
+      {pages.map((page) => <div className="notebook-flip-page" data-density="soft" key={`${page.pageNumber}-${page.kind}`}>
+        <NotebookPage mode={mode} onOpenRecord={onOpenRecord} page={page} theme={theme} />
       </div>)}
     </div></div>
 })
@@ -82,7 +113,6 @@ export function MonthlyNotebook({ active, entries, initialMonth, theme, onClose,
   const [exporting, setExporting] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
   const [mode, setMode] = useState<NotebookMode>(() => localStorage.getItem('moon-dust-notebook-mode') === 'night' ? 'night' : 'day')
-  const paperRef = useRef<HTMLElement>(null)
   const flipBookRef = useRef<PageFlip | null>(null)
   const pageIndexRef = useRef(0)
   const isFlippingRef = useRef(false)
@@ -109,40 +139,9 @@ export function MonthlyNotebook({ active, entries, initialMonth, theme, onClose,
     return keys.includes(monthKey) ? keys : [monthKey, ...keys]
   }, [entries, monthKey])
 
-  useLayoutEffect(() => {
-    if (!active || !paperRef.current) return
-    const paper = paperRef.current
-    const update = () => {
-      const sample = paper.querySelector<HTMLElement>('.notebook-text-measure')
-      if (!sample) return
-      const style = getComputedStyle(sample)
-      const measuredFontSize = Number.parseFloat(style.fontSize)
-      const measuredLineHeight = Number.parseFloat(style.lineHeight)
-      const measuredLetterSpacing = Number.parseFloat(style.letterSpacing)
-      setMetrics((current) => {
-        const fontSize = Number.isFinite(measuredFontSize) ? measuredFontSize : current.fontSize
-        const next = {
-          width: paper.clientWidth > 0 ? paper.clientWidth * 0.83 : current.width,
-          firstPageHeight: paper.clientHeight > 0 ? paper.clientHeight * 0.47 : current.firstPageHeight,
-          continuationHeight: paper.clientHeight > 0 ? paper.clientHeight * 0.75 : current.continuationHeight,
-          font: `${style.fontWeight} ${fontSize}px ${style.fontFamily}`,
-          fontSize,
-          lineHeight: Number.isFinite(measuredLineHeight) && measuredLineHeight > 0 ? measuredLineHeight : current.lineHeight,
-          letterSpacing: Number.isFinite(measuredLetterSpacing) ? measuredLetterSpacing : current.letterSpacing,
-        }
-        return JSON.stringify(current) === JSON.stringify(next) ? current : next
-      })
-    }
-    update()
-    const observer = new ResizeObserver(update)
-    observer.observe(paper)
-    void document.fonts?.ready.then(update)
-    document.fonts?.addEventListener('loadingdone', update)
-    return () => {
-      observer.disconnect()
-      document.fonts?.removeEventListener('loadingdone', update)
-    }
-  }, [active, mode, monthKey])
+  const handleMetrics = useCallback((next: NotebookTextMetrics) => {
+    setMetrics((current) => JSON.stringify(current) === JSON.stringify(next) ? current : next)
+  }, [])
 
   useEffect(() => {
     if (pageIndex >= pages.length) {
@@ -178,12 +177,9 @@ export function MonthlyNotebook({ active, entries, initialMonth, theme, onClose,
     if (!flip || isFlippingRef.current || flip.getState() !== 'read' || nextIndex === currentIndex || nextIndex < 0 || nextIndex >= pages.length) return
     isFlippingRef.current = true
     setIsFlipping(true)
-    if (nextIndex === currentIndex - 1) {
-      const bounds = flip.getBoundsRect()
-      const previousCorner = { x: bounds.left + 10, y: bounds.top + bounds.height - 2 }
-      flip.startUserTouch(previousCorner)
-      flip.userStop(previousCorner)
-    } else flip.flip(nextIndex, 'bottom')
+    if (nextIndex === currentIndex - 1) flip.flipPrev('bottom')
+    else if (nextIndex === currentIndex + 1) flip.flipNext('bottom')
+    else flip.flip(nextIndex, 'bottom')
     if (flip.getState() === 'read') {
       isFlippingRef.current = false
       setIsFlipping(false)
@@ -248,7 +244,7 @@ export function MonthlyNotebook({ active, entries, initialMonth, theme, onClose,
         <div className="notebook-page-shell">
           <button aria-label="上一页" className="notebook-page-turn previous" disabled={isFlipping || pageIndex === 0} onClick={() => turnTo(pageIndex - 1)} type="button">‹</button>
           <div className="notebook-book">
-            {active && <NotebookFlipBook getCurrentPage={getCurrentPage} key={flipBookKey} mode={mode} onFlip={handleFlip} onFlipState={handleFlipState} onOpenRecord={onOpenRecord} pages={pages} paperRef={paperRef} setInstance={setFlipBook} theme={theme} />}
+            {active && <NotebookFlipBook getCurrentPage={getCurrentPage} key={flipBookKey} mode={mode} onFlip={handleFlip} onFlipState={handleFlipState} onMetrics={handleMetrics} onOpenRecord={onOpenRecord} pages={pages} setInstance={setFlipBook} theme={theme} />}
           </div>
           <button aria-label="下一页" className="notebook-page-turn next" disabled={isFlipping || pageIndex === pages.length - 1} onClick={() => turnTo(pageIndex + 1)} type="button">›</button>
         </div>

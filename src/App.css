@@ -2330,6 +2330,12 @@ html, body {
 .notebook-flipbook { min-width: 0 !important; min-height: 0 !important; max-width: none !important; }
 .notebook-flipbook .stf__wrapper { padding-bottom: 0 !important; }
 .notebook-flipbook .stf__block { overflow: visible; }
+.notebook-flipbook .stf__block,
+.notebook-flipbook .stf__item {
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  will-change: transform;
+}
 .notebook-flip-page { overflow: hidden; background: transparent; }
 .notebook-flip-page .notebook-paper { width: 100%; height: 100%; box-shadow: none; }
 .notebook-flipbook .stf__outerShadow,
@@ -2950,7 +2956,7 @@ html, body {
   overflow: hidden;
 }
 
-.notebook-story-copy > span { display: block; height: 2em; white-space: pre; }
+.notebook-story-copy > span { display: block; min-height: 2em; overflow: visible; white-space: pre-wrap; }
 .notebook-story-copy .paragraph-space { height: 2em; }
 .notebook-text-measure { position: absolute; visibility: hidden; pointer-events: none; }
 

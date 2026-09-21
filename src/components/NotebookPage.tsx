@@ -32,7 +32,7 @@ function CoverPage({ page }: { page: Extract<NotebookReadingPage, { kind: 'cover
 
 function GalleryPage({ page, onOpenRecord }: { page: Extract<NotebookReadingPage, { kind: 'gallery' }>; onOpenRecord: (record: MediaRecord) => void }) {
   const columns = Math.min(7, Math.max(3, Math.ceil(Math.sqrt(page.records.length * 1.6))))
-  return <div className="notebook-gallery-page"><header><span>本月看过的电影</span><small>{page.month.monthName} · {page.records.length} stories</small></header>{page.records.length ? <div className="notebook-gallery-grid" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>{page.records.map((record, index) => <button className={`notebook-gallery-item gallery-item-${index % 4}`} key={record.id} onClick={() => onOpenRecord(record)} type="button">{record.poster ? <img alt={record.title} src={record.poster} /> : <span>NO IMAGE</span>}<strong>《{record.title}》</strong></button>)}</div> : <p className="notebook-gallery-empty">这个月还没有留下电影。</p>}</div>
+  return <div className="notebook-gallery-page"><header><span>本月看过的电影</span><small>{page.month.monthName} · {page.records.length} stories</small></header>{page.records.length ? <div className="notebook-gallery-grid" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>{page.records.map((record, index) => <button aria-label={`打开《${record.title}》`} className={`notebook-gallery-item gallery-item-${index % 4}`} key={record.id} onClick={() => onOpenRecord(record)} type="button">{record.poster ? <img alt="" src={record.poster} /> : <span>NO IMAGE</span>}</button>)}</div> : <p className="notebook-gallery-empty">这个月还没有留下电影。</p>}</div>
 }
 
 export function NotebookPage({ page, theme, mode, onOpenRecord, paperRef }: NotebookPageProps) {

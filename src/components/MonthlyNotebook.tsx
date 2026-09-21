@@ -27,6 +27,7 @@ const NotebookFlipBook = memo(function NotebookFlipBook({ getCurrentPage, mode, 
     const root = rootRef.current
     if (!root) return
     const elements = root.querySelectorAll<HTMLElement>('.notebook-flip-page')
+    const coarsePointer = window.matchMedia('(hover: none), (pointer: coarse)').matches
     const flip = new PageFlip(root, {
       width: 760,
       height: 1013,
@@ -44,7 +45,7 @@ const NotebookFlipBook = memo(function NotebookFlipBook({ getCurrentPage, mode, 
       showCover: false,
       mobileScrollSupport: true,
       clickEventForward: true,
-      useMouseEvents: true,
+      useMouseEvents: !coarsePointer,
       swipeDistance: 42,
       showPageCorners: false,
       disableFlipByClick: true,
@@ -206,7 +207,7 @@ export function MonthlyNotebook({ active, entries, initialMonth, theme, onClose,
     setExporting(true)
     setExportError(null)
     try {
-      await exportNotebookZip(entries, keys, theme, mode)
+      await exportNotebookZip(entries, keys, longReviews, theme, mode)
     } catch (error) {
       setExportError(error instanceof Error ? error.message : '导出失败，请稍后再试。')
     } finally {

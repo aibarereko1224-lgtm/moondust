@@ -38,6 +38,8 @@ html, body {
   color: var(--text-primary);
   overflow-x: hidden;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  overscroll-behavior-x: none;
 }
 
 /* Noise Overlay */
@@ -2254,6 +2256,8 @@ html, body {
   background:
     radial-gradient(circle at 50% 44%, rgba(255, 255, 255, 0.055), transparent 42%),
     rgba(5, 6, 8, 0.24);
+  touch-action: pan-y;
+  overscroll-behavior: contain;
 }
 
 .notebook-page-shell {
@@ -2785,7 +2789,6 @@ html, body {
 .notebook-gallery-grid { display: grid; height: 84%; align-content: space-evenly; align-items: start; gap: 4% 5%; padding: 4% 3% 0; }
 .notebook-gallery-item { display: flex; min-width: 0; flex-direction: column; align-items: stretch; padding: 0; border: 0; color: var(--notebook-ink); background: transparent; text-align: left; cursor: pointer; }
 .notebook-gallery-item img, .notebook-gallery-item > span { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; background: color-mix(in srgb, var(--notebook-line) 18%, transparent); }
-.notebook-gallery-item strong { margin-top: 10px; overflow: hidden; font-family: var(--notebook-reading-font); font-size: clamp(9px, .9vw, 13px); font-weight: 300; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
 .notebook-gallery-item:nth-child(2), .notebook-gallery-item:nth-child(5) { transform: translateY(9%); }
 .notebook-gallery-item:nth-child(3) { transform: translateY(-3%); }
 .notebook-gallery-empty { margin: 28% auto 0; color: var(--notebook-muted); font-family: var(--notebook-reading-font); font-size: clamp(11px, 1.1vw, 15px); text-align: center; }
@@ -2966,6 +2969,18 @@ html, body {
 }
 
 @media (max-width: 768px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
+  button,
+  a,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+
   .notebook-panel {
     inset: 0;
     min-height: 100vh;
@@ -3021,6 +3036,7 @@ html, body {
     width: 32px;
     height: 48px;
     font-size: 25px;
+    touch-action: manipulation;
   }
 }
 
